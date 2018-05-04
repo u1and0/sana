@@ -1,4 +1,4 @@
-﻿#!/bin/env python
+﻿#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """CSVを読み込んでデータフレーム化
 マシン名: 
@@ -42,4 +42,13 @@ def nearest_x(df, value):
     down = df.max() - value
     absolute_sub = pd.DataFrame(abs(df - down)).sort_values(by=df.columns[0])
     return absolute_sub
+
+
+# 残骸
+# class DataReader:
+#     machine=(A_9010, N_5071)
+#     __init__(file, machine)
+#         if not machine
+#         machine=self.machine
+
 
