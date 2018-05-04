@@ -3,6 +3,7 @@
 import pandas as pd
 import numpy as np
 import os
+import cufflinks
 
 
 def nearest_x(series, value):
@@ -54,9 +55,12 @@ class Syncf:
         }
         return pd.Series(dicc, index=dicc.keys())
 
-    def plot(self, ylabel='試験入力利得[dB]'):
-        ax = self.data.plot()
+    def plot(self, ylabel='試験入力利得[dB]', xlim=None, ylim=None, xticks=None, yticks=None):
+        ax = self.data.plot(xlim=xlim, ylim=ylim, xticks=xticks, yticks=yticks)
         ax.set_ylabel(ylabel)
-        ax.plot(self.data.idxmax(), self.data.max(), 'd')
+        ax.plot([self.f1, self.f2, self.f3, self.f4, self.fmax],
+            [self.data[self.f1], self.data[self.f2],
+            self.data[self.f3], self.data[self.f4], self.data[self.fmax]], 'd')
+        # ax.plot(self.f0, self.data[self.f0], 'd')  # 帯域から導いたf0はインデックスの中にない場合がある
         return ax
 
