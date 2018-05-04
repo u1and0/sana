@@ -14,7 +14,7 @@ def nearest_x(series, value):
 class Syncf:
     """
     args:
-        se: Network Analyzerから読んだF特(pandas.Series型)
+        data: Network Analyzerから読んだF特(pandas.Series型)
 
     return
         f1, f2: 3dB落ちたところの周波数
@@ -25,14 +25,21 @@ class Syncf:
         fmax: 最大値から算出する同調周波数
     """
 
-    def __init__(self, se):
-       self.se = se
-       self.f1, self.f2 = nearest_x(se,3).head(2).index.values  # 3dB down f1 & f2
-       self.f3, self.f4 = nearest_x(se,6).head(2).index.values  # 6dB down f3 & f4
-       self.fa = abs(self.f1 - self.f2)
-       self.fb = abs(self.f3 - self.f4)
-       self.f0 = np.mean([self.f1, self.f2, self.f3, self.f4])
-       self.fmax = self.se.idxmax()
+    def __init__(self, data, f1=None, f2=None, f3=None, f4=None):
+        self.data = data
+
+        self.down3dB = nearest_x(self.data ,3)
+        self.down6dB = nearest_x(self.data ,6)
+
+        self.f1= f1 if f1 else self.down3dB.index[0]
+        self.f2= f2 if f2 else self.down3dB.index[1]
+        self.f3= f3 if f3 else self.down6dB.index[0]
+        self.f4= f4 if f4 else self.down6dB.index[1]
+
+        self.fa = abs(self.f1 - self.f2)
+        self.fb = abs(self.f3 - self.f4)
+        self.f0 = np.mean([self.f1, self.f2, self.f3, self.f4])
+        self.fmax = self.data.idxmax()
 
     def describe(self):
         dicc = {
@@ -47,10 +54,9 @@ class Syncf:
         }
         return pd.Series(dicc, index=dicc.keys())
 
-    def plot(self):
-        ax = self.se.plot()
-        ax.set_ylabel('試験入力利得[dB]')
-        ax.plot(self.se.idxmax(), self.se.max(), 'd')
+    def plot(self, ylabel='試験入力利得[dB]'):
+        ax = self.data.plot()
+        ax.set_ylabel(ylabel)
+        ax.plot(self.data.idxmax(), self.data.max(), 'd')
         return ax
-
 
