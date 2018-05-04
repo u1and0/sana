@@ -55,8 +55,8 @@ class Syncf:
         }
         return pd.Series(dicc, index=dicc.keys())
 
-    def plot(self, ylabel='試験入力利得[dB]', xlim=None, ylim=None, xticks=None, yticks=None):
-        ax = self.data.plot(xlim=xlim, ylim=ylim, xticks=xticks, yticks=yticks)
+    def plot(self, ylabel='試験入力利得[dB]', **kwargs):
+        ax = self.data.plot(**kwargs)
         ax.set_ylabel(ylabel)
         ax.plot([self.f1, self.f2, self.f3, self.f4, self.fmax],
             [self.data[self.f1], self.data[self.f2],
