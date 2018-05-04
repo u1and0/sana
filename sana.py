@@ -29,13 +29,18 @@ class Syncf:
     def __init__(self, data, f1=None, f2=None, f3=None, f4=None):
         self.data = data
 
-        self.down3dB = nearest_x(self.data ,3)
-        self.down6dB = nearest_x(self.data ,6)
+        lower = data.loc[data.index<=data.idxmax()]
+        upper = data.loc[data.index>data.idxmax()]
 
-        self.f1= f1 if f1 else self.down3dB.index[0]
-        self.f2= f2 if f2 else self.down3dB.index[1]
-        self.f3= f3 if f3 else self.down6dB.index[0]
-        self.f4= f4 if f4 else self.down6dB.index[1]
+        self.lower3dBdown = nearest_x(lower, 3)
+        self.upper3dBdown = nearest_x(upper, 3)
+        self.lower6dBdown = nearest_x(lower, 6)
+        self.upper6dBdown = nearest_x(upper, 6)
+
+        self.f1= f1 if f1 else self.lower3dBdown.index[0]
+        self.f2= f2 if f2 else self.upper3dBdown.index[0]
+        self.f3= f3 if f3 else self.lower6dBdown.index[0]
+        self.f4= f4 if f4 else self.upper6dBdown.index[0]
 
         self.fa = abs(self.f1 - self.f2)
         self.fb = abs(self.f3 - self.f4)
