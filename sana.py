@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 import pandas as pd
 import numpy as np
-import csv_reader as c
+import csv_reader
 import sys
 
 
@@ -16,24 +16,26 @@ def nearest_x(series, value):
 class Syncf:
     """
     usage:
+        # On bash shell
+        $ python sana.py hoge.csv
+
         # In python
         sf = sana.Syncf(df.iloc[:,0])  # Args must be Series type
         sf.describe()  # Show table
         sf.plot()  # Show graph
 
-        # On bash shell
-        $ python sana.py hoge.csv
-
     args:
         data: Network Analyzerから読んだF特(pandas.Series型)
 
     return
-        f1, f2: 3dB落ちたところの周波数
-        f3, f4: 6dB落ちたところの周波数
-        fa: 3dB落ちの帯域幅
-        fb: 6dB落ちの帯域幅
+        f1: 3dB落ちの周波数(低域)
+        f2: 3dB落ちの周波数(高域)
+        f3: 6dB落ちの周波数(低域)
+        f4: 6dB落ちの周波数(高域)
+        fa: 3dB落ちの帯域幅(f2-f1)
+        fb: 6dB落ちの帯域幅(f4-f3)
         f0: 帯域幅から算出する同調周波数(f1~f4の平均値)
-        fmax: 最大値から算出する同調周波数
+        fmax: 最大値から算出する同調周波数(最大値)
     """
 
     def __init__(self, data, f1=None, f2=None, f3=None, f4=None):
@@ -52,8 +54,8 @@ class Syncf:
         self.f3 = f3 if f3 else self.lower6dBdown.index[0]
         self.f4 = f4 if f4 else self.upper6dBdown.index[0]
 
-        self.fa = abs(self.f1 - self.f2)
-        self.fb = abs(self.f3 - self.f4)
+        self.fa = self.f2 - self.f1
+        self.fb = self.f4 - self.f3
         self.f0 = np.mean([self.f1, self.f2, self.f3, self.f4])
         self.fmax = self.data.idxmax()
 
@@ -82,8 +84,14 @@ class Syncf:
         return ax
 
 
+def main(argvs):
+    if '-h' in argvs:
+        return Syncf.__doc__
+    else:
+        df = csv_reader.reader_N5071(argvs[1])
+        sf = Syncf(df.iloc[:, 0])
+        return sf.describe()
+
+
 if __name__ == '__main__':
-    argvs = sys.argv
-    df = c.reader_N5071(argvs[1])
-    sf = Syncf(df.iloc[:, 0])
-    print(sf.describe())
+    print(main(sys.argv))
