@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 import pandas as pd
 import numpy as np
-import os
-import cufflinks
+import csv_reader as c
+import sys
 
 
 def nearest_x(series, value):
@@ -14,6 +14,15 @@ def nearest_x(series, value):
 
 class Syncf:
     """
+    usage:
+        # In python
+        sf = sana.Syncf(df.iloc[:,0])  # Args must be Series type
+        sf.describe()  # Show table
+        sf.plot()  # Show graph
+
+        # On bash shell
+        $ python sana.py hoge.csv
+
     args:
         data: Network Analyzerから読んだF特(pandas.Series型)
 
@@ -69,3 +78,8 @@ class Syncf:
         # ax.plot(self.f0, self.data[self.f0], 'd')  # 帯域から導いたf0はインデックスの中にない場合がある
         return ax
 
+if __name__ == '__main__':
+    argvs = sys.argv
+    df = c.reader_N5071(argvs[1])
+    sf = Syncf(df.iloc[:, 0])
+    print(sf.describe())
