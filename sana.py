@@ -85,7 +85,7 @@ class Syncf:
 
 
 def main(argvs):
-    if '-h' in argvs:
+    if ('-h' in argvs or '--help' in argvs):
         return Syncf.__doc__
     else:
         df = csv_reader.reader_N5071(argvs[1])
