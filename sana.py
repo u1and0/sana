@@ -12,6 +12,7 @@ def nearest_x(series, value):
     absolute_sub = pd.Series(abs(series - down)).sort_values()
     return absolute_sub
 
+
 class Syncf:
     """
     usage:
@@ -38,18 +39,18 @@ class Syncf:
     def __init__(self, data, f1=None, f2=None, f3=None, f4=None):
         self.data = data
 
-        lower = data.loc[data.index<=data.idxmax()]
-        upper = data.loc[data.index>data.idxmax()]
+        lower = data.loc[data.index <= data.idxmax()]
+        upper = data.loc[data.index > data.idxmax()]
 
         self.lower3dBdown = nearest_x(lower, 3)
         self.upper3dBdown = nearest_x(upper, 3)
         self.lower6dBdown = nearest_x(lower, 6)
         self.upper6dBdown = nearest_x(upper, 6)
 
-        self.f1= f1 if f1 else self.lower3dBdown.index[0]
-        self.f2= f2 if f2 else self.upper3dBdown.index[0]
-        self.f3= f3 if f3 else self.lower6dBdown.index[0]
-        self.f4= f4 if f4 else self.upper6dBdown.index[0]
+        self.f1 = f1 if f1 else self.lower3dBdown.index[0]
+        self.f2 = f2 if f2 else self.upper3dBdown.index[0]
+        self.f3 = f3 if f3 else self.lower6dBdown.index[0]
+        self.f4 = f4 if f4 else self.upper6dBdown.index[0]
 
         self.fa = abs(self.f1 - self.f2)
         self.fb = abs(self.f3 - self.f4)
@@ -58,14 +59,14 @@ class Syncf:
 
     def describe(self):
         dicc = {
-        'f1': self.f1,
-        'f2': self.f2,
-        'f3': self.f3,
-        'f4': self.f4,
-        'fa': self.fa,
-        'fb': self.fb,
-        'f0': self.f0,
-        'fmax': self.fmax,
+            'f1': self.f1,
+            'f2': self.f2,
+            'f3': self.f3,
+            'f4': self.f4,
+            'fa': self.fa,
+            'fb': self.fb,
+            'f0': self.f0,
+            'fmax': self.fmax,
         }
         return pd.Series(dicc, index=dicc.keys())
 
@@ -73,10 +74,13 @@ class Syncf:
         ax = self.data.plot(**kwargs)
         ax.set_ylabel(ylabel)
         ax.plot([self.f1, self.f2, self.f3, self.f4, self.fmax],
-            [self.data[self.f1], self.data[self.f2],
-            self.data[self.f3], self.data[self.f4], self.data[self.fmax]], 'd')
-        # ax.plot(self.f0, self.data[self.f0], 'd')  # 帯域から導いたf0はインデックスの中にない場合がある
+                [self.data[self.f1], self.data[self.f2],
+                self.data[self.f3], self.data[self.f4],
+                self.data[self.fmax]], 'd')
+        # ax.plot(self.f0, self.data[self.f0], 'd')
+        # 帯域から導いたf0はインデックスの中にない場合がある
         return ax
+
 
 if __name__ == '__main__':
     argvs = sys.argv
