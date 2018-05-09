@@ -64,9 +64,6 @@ class Syncf:
         1が一番よい値。0が一番悪い値。
         0.95未満だと怪しいので
         sf.plot()でF得を表示して確認するべし
-
-        usage:
-            sf.score()
         """
         dicc = {
             'f1': 1 - self.lower3dBdown.values[0],
@@ -82,9 +79,6 @@ class Syncf:
         f1~f4: Frequency
         fa,fb: Bandwidth
         f0, fmax: Sync frequency
-
-        usage:
-            sf.describe()
         """
         dicc = {
             'f1': self.f1,
@@ -113,14 +107,14 @@ class Syncf:
 
 def main(argvs):
     if ('-h' in argvs or '--help' in argvs):
-        return Syncf.__doc__
+        print(Syncf.__doc__)
     else:
         df = csv_reader.reader_N5071(argvs[1])
         sf = Syncf(df.iloc[:, 0])
-        return sf
+        print(sf.score())
+        print()
+        print(sf.describe())
 
 
 if __name__ == '__main__':
-    print(main(sys.argv).score())
-    print('')
-    print(main(sys.argv).describe())
+    main(sys.argv)
