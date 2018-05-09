@@ -59,7 +59,33 @@ class Syncf:
         self.f0 = np.mean([self.f1, self.f2, self.f3, self.f4])
         self.fmax = self.data.idxmax()
 
+    def score(self):
+        """ずれ幅
+        1が一番よい値。0が一番悪い値。
+        0.95未満だと怪しいので
+        sf.plot()でF得を表示して確認するべし
+
+        usage:
+            sf.score()
+        """
+        dicc = {
+            'f1': 1 - self.lower3dBdown.values[0],
+            'f2': 1 - self.upper3dBdown.values[0],
+            'f3': 1 - self.lower6dBdown.values[0],
+            'f4': 1 - self.upper6dBdown.values[0],
+        }
+        print(self.score.__doc__)
+        return pd.Series(dicc)
+
     def describe(self):
+        """ 周波数情報を返す
+        f1~f4: Frequency
+        fa,fb: Bandwidth
+        f0, fmax: Sync frequency
+
+        usage:
+            sf.describe()
+        """
         dicc = {
             'f1': self.f1,
             'f2': self.f2,
@@ -73,6 +99,7 @@ class Syncf:
         return pd.Series(dicc, index=dicc.keys())
 
     def plot(self, ylabel='試験入力利得[dB]', **kwargs):
+        """Return plot and point of f1~f4"""
         ax = self.data.plot(**kwargs)
         ax.set_ylabel(ylabel)
         ax.plot([self.f1, self.f2, self.f3, self.f4, self.fmax],
@@ -90,8 +117,10 @@ def main(argvs):
     else:
         df = csv_reader.reader_N5071(argvs[1])
         sf = Syncf(df.iloc[:, 0])
-        return sf.describe()
+        return sf
 
 
 if __name__ == '__main__':
-    print(main(sys.argv))
+    print(main(sys.argv).score())
+    print('')
+    print(main(sys.argv).describe())
