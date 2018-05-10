@@ -98,6 +98,15 @@ class Syncf:
         return ax
 
 
+def afit(sr):
+    """a*x + b
+    usage: afit(pandas.Series)"""
+    sf = Syncf(sr)
+    data = sr.loc[sf.f1:sf.fmax]
+    a, b = np.polyfit(data.index, data.values, 1)
+    return a
+
+
 def main(argvs):
     if ('-h' in argvs or '--help' in argvs):
         print(Syncf.__doc__)
