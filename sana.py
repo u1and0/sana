@@ -55,6 +55,10 @@ class Syncf:
         self.bw = self.f2 - self.f1
         self.q = self.f0 / self.bw
 
+        # 線形フィットで傾きaをだす
+        curv = self.data.loc[self.f1:self.fmax]
+        self.a, self._b = np.polyfit(curv.index, curv.values, 1)
+
     def score(self):
         """ずれ幅
         1が一番よい値。0が一番悪い値です。
@@ -84,7 +88,7 @@ class Syncf:
             'fmax': self.fmax,
             'BW': self.bw,
             'Q': self.q,
-            'a': self.afit(),
+            'a': self.a,
         }
         return pd.Series(dicc, index=dicc.keys())
 
@@ -98,13 +102,6 @@ class Syncf:
         # ax.plot(self.f0, self.data[self.f0], 'd')
         # 帯域から導いたf0はインデックスの中にない場合がある
         return ax
-
-    def afit(self):
-        """a*x + b
-        usage: sf.afit()"""
-        curv = self.data.loc[self.f1:self.fmax]
-        a, b = np.polyfit(curv.index, curv.values, 1)
-        return a
 
 
 def main(argvs):
