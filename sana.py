@@ -44,20 +44,17 @@ class Syncf:
         lower = data.loc[data.index <= data.idxmax()]
         upper = data.loc[data.index > data.idxmax()]
 
-        self.lower3dBdown = nearest_x(lower, 3)
-        self.upper3dBdown = nearest_x(upper, 3)
-        self.lower6dBdown = nearest_x(lower, 6)
-        self.upper6dBdown = nearest_x(upper, 6)
+        self._lower3dBdown = nearest_x(lower, 3)
+        self._upper3dBdown = nearest_x(upper, 3)
 
-        self.f1 = f1 if f1 else self.lower3dBdown.index[0]
-        self.f2 = f2 if f2 else self.upper3dBdown.index[0]
-        self.f3 = f3 if f3 else self.lower6dBdown.index[0]
-        self.f4 = f4 if f4 else self.upper6dBdown.index[0]
+        self.f1 = f1 if f1 else self._lower3dBdown.index[0]
+        self.f2 = f2 if f2 else self._upper3dBdown.index[0]
 
-        self.fa = self.f2 - self.f1
-        self.fb = self.f4 - self.f3
-        self.f0 = np.mean([self.f1, self.f2, self.f3, self.f4])
+        self.f0 = np.mean([self.f1, self.f2])
         self.fmax = self.data.idxmax()
+
+        self.bw = self.f2 - self.f1
+        self.q = self.f0 / self.bw
 
     def score(self):
         """ずれ幅
@@ -66,10 +63,8 @@ class Syncf:
         sf.plot()でF得を表示して確認するべし
         """
         dicc = {
-            'f1': 1 - self.lower3dBdown.values[0],
-            'f2': 1 - self.upper3dBdown.values[0],
-            'f3': 1 - self.lower6dBdown.values[0],
-            'f4': 1 - self.upper6dBdown.values[0],
+            'f1': 1 - self._lower3dBdown.values[0],
+            'f2': 1 - self._upper3dBdown.values[0],
         }
         print(self.score.__doc__)
         return pd.Series(dicc)
@@ -83,12 +78,10 @@ class Syncf:
         dicc = {
             'f1': self.f1,
             'f2': self.f2,
-            'f3': self.f3,
-            'f4': self.f4,
-            'fa': self.fa,
-            'fb': self.fb,
             'f0': self.f0,
             'fmax': self.fmax,
+            'BW': self.bw,
+            'Q': self.q,
         }
         return pd.Series(dicc, index=dicc.keys())
 
