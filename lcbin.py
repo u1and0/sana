@@ -38,6 +38,17 @@ def binary_c(c_initial, c_num, lmh):
     return df
 
 
+def nosyncf(second_trance):
+    """
+    second_trance: unit[mH]
+    ant_indactance: unit[mH]
+    normal_nosyncf: unit[kHz]
+    """
+    first_trance = 27
+    normal_nosyncf = 166
+    return normal_nosyncf / np.sqrt(second_trance / first_trance)
+
+
 if __name__ == '__main__':
     print('===binary_c test===')
     print(binary_c(5, 9, 0.39))
