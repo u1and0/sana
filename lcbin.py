@@ -14,7 +14,7 @@ def binary_c(c_initial, c_num, lmh):
     組み合わせテーブルを作成するpythonスクリプト
 
     usage:
-        `binary_c(5, 9, 0.39)`
+        `binary_c(5, 9, 39)`
     args:
         c_initial: Minimum Capacitance(float)
         c_num: Number of capacitance[uF](float)
@@ -32,7 +32,7 @@ def binary_c(c_initial, c_num, lmh):
     df['Csum'] = csum
 
     # Frequency columns
-    fHz = 1 / (2 * np.pi * np.sqrt(csum * 1e-12 * lmh))
+    fHz = 1 / (2 * np.pi * np.sqrt(csum * 1e-12 * lmh * 1e-3))
     df['fkHz'] = fHz / 1000
     df.drop(0, inplace=True)
     return df
