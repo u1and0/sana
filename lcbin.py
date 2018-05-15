@@ -1,21 +1,43 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""lcbin.py
-インダクタンス容量からコンデンサのバイナリ
-組み合わせテーブルを作成するpythonスクリプト
-"""
-import pandas as pd
 import numpy as np
+import pandas as pd
+import warnings
+warnings.filterwarnings('error')
 
-binl = [list(format(_, 'b'))[::-1] for _ in range(512)]
-coll = [5 * 2**_ for _ in range(9)]
-df = pd.DataFrame(binl, columns=coll).fillna(0)
 
-csum = np.arange(0, 2556, 5)
-df['Csum'] = csum
+def binary_c(c_initial, c_num, lmh):
+    """Binary Capacitance table
+    インダクタンス容量からコンデンサのバイナリ
+    組み合わせテーブルを作成するpythonスクリプト
 
-lmh = 0.039
-fHz = 1 / (2 * np.pi * np.sqrt(csum * 1e-12 * lmh))
+    usage:
+        `binary_c(5, 9, 0.39)`
+    args:
+        c_initial: Minimum Capacitance(float)
+        c_num: Number of capacitance[uF](float)
+        lmh: Indactance[mH](float)
+    return:
+        df: Binary table (pd.DataFrame)
+    """
+    # Binary columns
+    bin_list = [list(format(_, 'b'))[::-1] for _ in range(2**c_num)]
+    c_list = [c_initial * 2**_ for _ in range(c_num)]
+    df = pd.DataFrame(bin_list, columns=c_list).fillna(0)
 
-df['fkHz'] = fHz / 1000
-df.to_csv('binc.csv')
+    # Capacitance columns
+    csum = np.arange(0, sum(c_list) + 1, 5)
+    df['Csum'] = csum
+
+    # Frequency columns
+    try:
+        fHz = 1 / (2 * np.pi * np.sqrt(csum * 1e-12 * lmh))
+        df['fkHz'] = fHz / 1000
+    except RuntimeWarning:
+        df.drop(0, inplace=True)
+    return df
+
+
+if __name__ == '__main__':
+    print('===binary_c test===')
+    print(binary_c(5, 9, 0.39))
