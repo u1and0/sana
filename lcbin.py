@@ -2,8 +2,10 @@
 # -*- coding: utf-8 -*-
 import numpy as np
 import pandas as pd
-import warnings
-warnings.filterwarnings('error')
+np.seterr(divide='ignore')  # divideによるエラーを無視する
+
+# import warnings
+# warnings.filterwarnings('error')
 
 
 def binary_c(c_initial, c_num, lmh):
@@ -26,15 +28,13 @@ def binary_c(c_initial, c_num, lmh):
     df = pd.DataFrame(bin_list, columns=c_list).fillna(0)
 
     # Capacitance columns
-    csum = np.arange(0, sum(c_list) + 1, 5)
+    csum = np.arange(0, sum(c_list) + 1, c_initial)
     df['Csum'] = csum
 
     # Frequency columns
-    try:
-        fHz = 1 / (2 * np.pi * np.sqrt(csum * 1e-12 * lmh))
-        df['fkHz'] = fHz / 1000
-    except RuntimeWarning:
-        df.drop(0, inplace=True)
+    fHz = 1 / (2 * np.pi * np.sqrt(csum * 1e-12 * lmh))
+    df['fkHz'] = fHz / 1000
+    df.drop(0, inplace=True)
     return df
 
 
