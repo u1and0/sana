@@ -8,7 +8,7 @@ np.seterr(divide='ignore')  # divideによるエラーを無視する
 # warnings.filterwarnings('error')
 
 
-def binary_c(c_initial, c_num, lmh):
+def binary_c(c_initial, c_num, lmh, display_all=False):
     """Binary Capacitance table
     インダクタンス容量からコンデンサのバイナリ
     組み合わせテーブルを作成するpythonスクリプト
@@ -19,6 +19,7 @@ def binary_c(c_initial, c_num, lmh):
         c_initial: Minimum Capacitance(float)
         c_num: Number of capacitance[uF](float)
         lmh: Indactance[mH](float)
+        display_all: default False(bool)
     return:
         df: Binary table (pd.DataFrame)
     """
@@ -35,6 +36,8 @@ def binary_c(c_initial, c_num, lmh):
     fHz = 1 / (2 * np.pi * np.sqrt(csum * 1e-12 * lmh * 1e-3))
     df['fkHz'] = fHz / 1000
     df.drop(0, inplace=True)
+    if display_all:
+        pd.options.display.max_rows = len(df)
     return df
 
 
