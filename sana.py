@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+import sys
 import pandas as pd
 import numpy as np
-import csv_reader
-import sys
+from . import csv_reader
 
 
 def nearest_x(series, value):
@@ -97,14 +97,17 @@ class Syncf:
         ax = self.data.plot(**kwargs)
         ax.set_ylabel(ylabel)
         ax.plot([self.f1, self.f2, self.fmax],
-                [self.data[self.f1], self.data[self.f2],
-                self.data[self.fmax]], 'd')
+                [self.data[self.f1], self.data[self.f2], self.data[self.fmax]],
+                'd')
         # ax.plot(self.f0, self.data[self.f0], 'd')
         # 帯域から導いたf0はインデックスの中にない場合がある
         return ax
 
 
 def main(argvs):
+    """from shell session
+    $ python sana.py test.csv
+    """
     if ('-h' in argvs or '--help' in argvs):
         print(Syncf.__doc__)
     else:
