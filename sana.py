@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 import pandas as pd
 import numpy as np
-import csv_reader
 import sys
+from .csv_reader import reader_N5071
 
 
 def nearest_x(series, value):
@@ -14,7 +14,8 @@ def nearest_x(series, value):
 
 
 class Syncf:
-    """
+    """3dB, 6dBゲイン落ちの周波数を返す
+    任意のdB落ちゲインを返すときは`sana.nearest_x`を参照
     usage:
         # On bash shell
         $ python sana.py hoge.csv
@@ -96,10 +97,10 @@ class Syncf:
         """Return plot and point of f1~f4"""
         ax = self.data.plot(**kwargs)
         ax.set_ylabel(ylabel)
-        ax.plot([self.f1, self.f2, self.f3, self.f4, self.fmax],
-                [self.data[self.f1], self.data[self.f2],
-                self.data[self.f3], self.data[self.f4],
-                self.data[self.fmax]], 'd')
+        ax.plot([self.f1, self.f2, self.f3, self.f4, self.fmax], [
+            self.data[self.f1], self.data[self.f2], self.data[self.f3],
+            self.data[self.f4], self.data[self.fmax]
+        ], 'd')
         # ax.plot(self.f0, self.data[self.f0], 'd')
         # 帯域から導いたf0はインデックスの中にない場合がある
         return ax
@@ -109,7 +110,7 @@ def main(argvs):
     if ('-h' in argvs or '--help' in argvs):
         print(Syncf.__doc__)
     else:
-        df = csv_reader.reader_N5071(argvs[1])
+        df = reader_N5071(argvs[1])
         sf = Syncf(df.iloc[:, 0])
         print(sf.score())
         print()
