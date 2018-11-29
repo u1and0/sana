@@ -15,9 +15,11 @@ def binary_c(c_initial, c_num, lmh, display_all=False):
 
     usage:
         `binary_c(5, 9, 39)`
+        # 5pFのコンデンサから倍倍に増えて最大5**9=5120pF
+        # 接続するインダクタンスが39mHの場合
     args:
         c_initial: Minimum Capacitance(float)
-        c_num: Number of capacitance[uF](float)
+        c_num: Number of capacitance[uF](int)
         lmh: Indactance[mH](float)
         display_all: default False(bool)
     return:
@@ -53,5 +55,12 @@ def nosyncf(second_trance, first_trance=27, normal_nosyncf=166):
 
 
 if __name__ == '__main__':
-    print('===binary_c test===')
-    print(binary_c(5, 9, 0.39))
+    import sys
+    argv = sys.argv
+    if len(argv) > 1:
+        print([int(i) for i in argv[1:]])
+        lc_args = [int(i) for i in argv[1:]]
+        lc_table = binary_c(*lc_args, display_all=True)
+        print(lc_table)
+    else:
+        print(binary_c.__doc__)
