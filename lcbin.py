@@ -8,17 +8,21 @@ np.seterr(divide='ignore')  # divideによるエラーを無視する
 # warnings.filterwarnings('error')
 
 
-def binary_c(c_initial, c_num, lmh, display_all=False):
+def binary_c(c_initial: float,
+             c_num: int,
+             lmh: float,
+             display_all: bool = False) -> pd.DataFrame:
     """Binary Capacitance table
     インダクタンス容量からコンデンサのバイナリ
     組み合わせテーブルを作成するpythonスクリプト
 
     usage:
         `binary_c(5, 9, 39)`
-        # 5pFのコンデンサから倍倍に増えて最大5**9=5120pF
+        # 5pFのコンデンサから倍倍に9回増えて
+        # 最も大きい一つのコンデンサ要領が5**9=5120pF
         # 接続するインダクタンスが39mHの場合
     args:
-        c_initial: Minimum Capacitance(float)
+        c_initial: Minimum Capacitance[pf](float)
         c_num: Number of capacitance[uF](int)
         lmh: Indactance[mH](float)
         display_all: default False(bool)
@@ -26,13 +30,14 @@ def binary_c(c_initial, c_num, lmh, display_all=False):
         df: Binary table (pd.DataFrame)
     """
     # Binary columns
+    # 二進数表記に変換
     bin_list = [list(format(_, 'b'))[::-1] for _ in range(2**c_num)]
     c_list = [c_initial * 2**_ for _ in range(c_num)]
     df = pd.DataFrame(bin_list, columns=c_list).fillna(0)
 
     # Capacitance columns
     csum = np.arange(0, sum(c_list) + 1, c_initial)
-    df['Csum'] = csum
+    df['CpF'] = csum
 
     # Frequency columns
     fHz = 1 / (2 * np.pi * np.sqrt(csum * 1e-12 * lmh * 1e-3))
@@ -40,6 +45,7 @@ def binary_c(c_initial, c_num, lmh, display_all=False):
     df.drop(0, inplace=True)
     if display_all:
         pd.options.display.max_rows = len(df)
+        pd.options.display.width = 0
     return df
 
 
@@ -54,13 +60,18 @@ def nosyncf(second_trance, first_trance=27, normal_nosyncf=166):
     return normal_nosyncf / np.sqrt(second_trance / first_trance)
 
 
+def main(argv):
+    if len(argv) > 1:
+        lc_args = []
+        lc_args.append(float(argv[1]))
+        lc_args.append(int(argv[2]))
+        lc_args.append(float(argv[3]))
+        lc_table = binary_c(*lc_args, display_all=True)
+        return lc_table
+    else:
+        return binary_c.__doc__
+
+
 if __name__ == '__main__':
     import sys
-    argv = sys.argv
-    if len(argv) > 1:
-        print([int(i) for i in argv[1:]])
-        lc_args = [int(i) for i in argv[1:]]
-        lc_table = binary_c(*lc_args, display_all=True)
-        print(lc_table)
-    else:
-        print(binary_c.__doc__)
+    print(main(sys.argv))
