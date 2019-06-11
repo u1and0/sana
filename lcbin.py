@@ -65,10 +65,12 @@ def nosyncf(second_trance, first_trance=27, normal_nosyncf=166):
 
 def main(argv):
     if len(argv) > 1:
-        lc_args = []
-        lc_args.append(float(argv[1]))
-        lc_args.append(int(argv[2]))
-        lc_args.append(float(argv[3]))
+        lc_args = [
+            float(argv[1]),  # c_initial
+            float(argv[2]),  # c_res
+            int(argv[3]),  # c_num
+            float(argv[4])  # lmh
+        ]
         lc_table = binary_c(*lc_args, display_all=True)
         return lc_table
     else:
