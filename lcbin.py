@@ -19,7 +19,7 @@ def binary_c(c_initial: float,
     usage:
         `binary_c(5, 9, 39)`
         # 5pFのコンデンサから倍倍に9回増えて
-        # 最も大きい一つのコンデンサ要領が5**9=5120pF
+        # 最も大きい一つのコンデンサ要領が5*2**9=2560pF
         # 接続するインダクタンスが39mHの場合
     args:
         c_initial: Minimum Capacitance[pf](float)
