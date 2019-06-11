@@ -52,17 +52,6 @@ def binary_c(c_initial: float,
     return df
 
 
-def nosyncf(second_trance, first_trance=27, normal_nosyncf=166):
-    """ 自己共振点を計算する関数
-    usage: nosyncf(second_trance=11, first_trance=27, normal_nosyncf=166)
-
-    second_trance: unit[mH]
-    ant_indactance: unit[mH]
-    normal_nosyncf: unit[kHz]
-    """
-    return normal_nosyncf / np.sqrt(second_trance / first_trance)
-
-
 def main(argv):
     if len(argv) > 1:
         lc_args = [
