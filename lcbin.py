@@ -53,6 +53,7 @@ def binary_c(c_initial: float,
 
 
 def main(argv):
+    """call from shell function"""
     if len(argv) > 1:
         lc_args = [
             float(argv[1]),  # c_initial
@@ -62,8 +63,7 @@ def main(argv):
         ]
         lc_table = binary_c(*lc_args, display_all=True)
         return lc_table
-    else:
-        return binary_c.__doc__
+    return binary_c.__doc__
 
 
 if __name__ == '__main__':
