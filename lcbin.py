@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+import os
 import numpy as np
 import pandas as pd
 np.seterr(divide='ignore')  # divideによるエラーを無視する
@@ -8,11 +9,41 @@ np.seterr(divide='ignore')  # divideによるエラーを無視する
 # warnings.filterwarnings('error')
 
 
+class Lcbin:
+    def __init__(self,
+                 c_initial: float,
+                 c_res: float,
+                 c_num: int,
+                 lmh: float,
+                 display_all: bool = False):
+        self.c_initial = c_initial
+        self.c_res = c_res
+        self.c_num = c_num
+        self.lmh = lmh
+        self.display_all = display_all
+        self.table = binary_c(c_initial, c_res, c_num, lmh, display_all)
+
+    def to_csv(self, directory=os.getcwd()):
+        """save to csv.
+        default current directory
+        """
+        init = 'init' + str(self.c_initial)
+        res = 'res' + str(self.c_res)
+        pat = 'pat' + str(self.c_num)
+        lmh = 'l' + str(self.lmh)
+        name = [s.replace('.', 'p') for s in (init, res, pat, lmh)]
+        name.append('.csv')
+        name.insert(0, '/')
+        name.insert(0, directory)
+        filename = ''.join(name)
+        self.table.to_csv(filename)
+
+
 def binary_c(c_initial: float,
              c_res: float,
              c_num: int,
              lmh: float,
-             display_all: bool = False) -> pd.DataFrame:
+             display_all=False) -> pd.DataFrame:
     """Binary Capacitance table
     インダクタンス容量からコンデンサのバイナリ
     組み合わせテーブルを作成するpythonスクリプト
@@ -40,7 +71,7 @@ def binary_c(c_initial: float,
     # Capacitance columns
     csum = np.arange(0, sum(c_list) + 1, c_res)
     df.columns += c_initial
-    df['CpF'] = csum + c_initial
+    df['CpF'] = csum + c_initial  # list + float **broadcast adding**
 
     # Frequency columns
     fHz = 1 / (2 * np.pi * np.sqrt(df.CpF * 1e-12 * lmh * 1e-3))
