@@ -9,6 +9,7 @@ np.seterr(divide='ignore')  # divideによるエラーを無視する
 
 
 def binary_c(c_initial: float,
+             c_res: float,
              c_num: int,
              lmh: float,
              display_all: bool = False) -> pd.DataFrame:
@@ -23,6 +24,7 @@ def binary_c(c_initial: float,
         # 接続するインダクタンスが39mHの場合
     args:
         c_initial: Minimum Capacitance[pf](float)
+        c_res: Resolution of capacitance[pf](float)
         c_num: Number of capacitance[uF](int)
         lmh: Indactance[mH](float)
         display_all: default False(bool)
@@ -32,15 +34,16 @@ def binary_c(c_initial: float,
     # Binary columns
     # 二進数表記に変換
     bin_list = [list(format(_, 'b'))[::-1] for _ in range(2**c_num)]
-    c_list = [c_initial * 2**_ for _ in range(c_num)]
+    c_list = [c_res * 2**_ for _ in range(c_num)]
     df = pd.DataFrame(bin_list, columns=c_list).fillna(0)
 
     # Capacitance columns
-    csum = np.arange(0, sum(c_list) + 1, c_initial)
-    df['CpF'] = csum
+    csum = np.arange(0, sum(c_list) + 1, c_res)
+    df.columns += c_initial
+    df['CpF'] = csum + c_initial
 
     # Frequency columns
-    fHz = 1 / (2 * np.pi * np.sqrt(csum * 1e-12 * lmh * 1e-3))
+    fHz = 1 / (2 * np.pi * np.sqrt(df.CpF * 1e-12 * lmh * 1e-3))
     df['fkHz'] = fHz / 1000
     df.drop(0, inplace=True)
     if display_all:
