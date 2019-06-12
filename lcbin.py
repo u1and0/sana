@@ -3,19 +3,45 @@
 import os
 import numpy as np
 import pandas as pd
-np.seterr(divide='ignore')  # divideによるエラーを無視する
-
-# import warnings
-# warnings.filterwarnings('error')
 
 
 class Lcbin:
+    """Binary Capacitance table
+    インダクタンス容量からコンデンサのバイナリ
+    組み合わせテーブルを作成するpythonスクリプト
+    """
+
     def __init__(self,
                  c_initial: float,
                  c_res: float,
                  c_num: int,
                  lmh: float,
                  display_all: bool = False):
+        """
+        usage:
+            `x = Lcbin(c_initial=120, c_res=5, c_num=9, lmh=39)`
+            コンデンサを9チャンネル用意し、
+            120pFのコンデンサから倍倍に9-1回増えて
+            最も大きい一つのコンデンサ容量が120 + 5*2**8=1400pF
+            接続するインダクタンスが39mHの場合
+            同調周波数が最高72kHz, 最低15kHz
+
+        args:
+            c_initial: Minimum Capacitance[pf](float)
+            c_res: Resolution of capacitance[pf](float)
+            c_num: Number of capacitance[uF](int)
+            lmh: Indactance[mH](float)
+            display_all: default False(bool)
+
+        return:
+            df: Binary table (pd.DataFrame)
+            `x.table`
+            ビットテーブルを出力する
+
+        `x.to_csv()`
+        条件をパースしてcsvファイルを生成する。
+        引数directoryを指定することで所定のディレクトリに保存する。
+        """
         self.c_initial = c_initial
         self.c_res = c_res
         self.c_num = c_num
@@ -49,10 +75,12 @@ def binary_c(c_initial: float,
     組み合わせテーブルを作成するpythonスクリプト
 
     usage:
-        `binary_c(5, 9, 39)`
-        # 5pFのコンデンサから倍倍に9回増えて
-        # 最も大きい一つのコンデンサ要領が5*2**9=2560pF
-        # 接続するインダクタンスが39mHの場合
+        `binary_c(c_initial=120, c_res=5, c_num=9, lmh=39)`
+        コンデンサを9チャンネル用意し、
+        120pFのコンデンサから倍倍に9-1回増えて
+        最も大きい一つのコンデンサ容量が120 + 5*2**8=1400pF
+        接続するインダクタンスが39mHの場合
+        同調周波数が最高72kHz, 最低15kHz
     args:
         c_initial: Minimum Capacitance[pf](float)
         c_res: Resolution of capacitance[pf](float)
