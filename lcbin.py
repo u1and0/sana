@@ -38,6 +38,9 @@ class Lcbin:
             `x.table`
             ビットテーブルを出力する
 
+        `x.table`
+        LCバイナリと合計容量CpF, 同調周波数fkHzを出力する
+
         `x.to_csv()`
         条件をパースしてcsvファイルを生成する。
         引数directoryを指定することで所定のディレクトリに保存する。
