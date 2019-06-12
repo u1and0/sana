@@ -74,3 +74,35 @@ SN比の計算
 * SN比:sn  # snはsigとnoiseの差分
 
 以上をpandas DataFrame形式(表形式)で返す
+
+# lcbin.py
+Binary Capacitance table
+インダクタンス容量からコンデンサのバイナリ
+組み合わせテーブルを作成するpythonスクリプト
+
+    usage:
+        `x = Lcbin(c_initial=120, c_res=5, c_num=9, lmh=39)`
+        コンデンサを9チャンネル用意し、
+        120pFのコンデンサから倍倍に9-1回増えて
+        最も大きい一つのコンデンサ容量が120 + 5*2**8=1400pF
+        接続するインダクタンスが39mHの場合
+        同調周波数が最高72kHz, 最低15kHz
+
+    args:
+        c_initial: Minimum Capacitance[pf](float)
+        c_res: Resolution of capacitance[pf](float)
+        c_num: Number of capacitance[uF](int)
+        lmh: Indactance[mH](float)
+        display_all: default False(bool)
+
+    return:
+        df: Binary table (pd.DataFrame)
+        `x.table`
+        ビットテーブルを出力する
+
+    `x.table`
+    LCバイナリと合計容量CpF, 同調周波数fkHzを出力する
+
+    `x.to_csv()`
+    条件をパースしてcsvファイルを生成する。
+    引数directoryを指定することで所定のディレクトリに保存する。
