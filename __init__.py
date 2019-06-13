@@ -64,7 +64,7 @@ $ python sana.py test.csv
 CSVを読み込んでデータフレーム化
 マシン名:
     ネットワークアナライザ:N5071
-    スペクトラムアナライザ:A9010
+    スペクトラムアナライザ:N9010A
 
 
 # describe_SN
@@ -111,7 +111,7 @@ Binary Capacitance table
 """
 
 from .csv_reader import reader_N5071
-from .csv_reader import reader_A9010
+from .csv_reader import reader_N9010A
 from .describe_SN import describe_SN
 from .sana import Syncf
 from .sana import nearest_x
