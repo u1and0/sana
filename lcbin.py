@@ -51,6 +51,7 @@ class Lcbin:
         self.lmh = lmh
         self.display_all = display_all
         self.table = binary_c(c_initial, c_res, c_num, lmh, display_all)
+        self.len = 2 ** c_num -1
 
     def to_csv(self, directory=os.getcwd()):
         """save to csv.
@@ -67,6 +68,13 @@ class Lcbin:
         filename = ''.join(name)
         self.table.to_csv(filename)
 
+    def pprint(self):
+        """print all rows & columns"""""
+        with pd.option_context('display.max_rows',
+                               self.len,
+                               'display.width',
+                               0):
+            print(self.table)
 
 def binary_c(c_initial: float,
              c_res: float,
