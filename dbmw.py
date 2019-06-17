@@ -1,5 +1,22 @@
 #!/usr/bin/env python3
 """デシベルdB <-> ミリワットmW 変換"""
+import pandas as pd
+import numpy as np
+
+def noisefloor(df, axis: int=0, percent: float=25):
+    """
+    1/4 medianをノイズフロアとし、各列に適用して返す
+    引数:
+        df: 行が周波数、列が日時(データフレーム型)
+        axis: 0 or 1.
+            0: 列に適用(デフォルト)
+            1: 行に適用
+    戻り値:
+        df: ノイズフロア(データフレーム型)
+    """
+    return df.apply(lambda x: stats.scoreatpercentile(x, percent), axis)
+
+
 
 def mw2db(x):
     """mW -> dB
