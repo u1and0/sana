@@ -15,8 +15,7 @@ class Lcbin:
                  c_initial: float,
                  c_res: float,
                  c_num: int,
-                 lmh: float,
-                 display_all: bool = False):
+                 lmh: float):
         """
         usage:
             `x = Lcbin(c_initial=120, c_res=5, c_num=9, lmh=39)`
@@ -31,7 +30,6 @@ class Lcbin:
             c_res: Resolution of capacitance[pf](float)
             c_num: Number of capacitance[uF](int)
             lmh: Indactance[mH](float)
-            display_all: default False(bool)
 
         return:
             df: Binary table (pd.DataFrame)
@@ -49,8 +47,7 @@ class Lcbin:
         self.c_res = c_res
         self.c_num = c_num
         self.lmh = lmh
-        self.display_all = display_all
-        self.table = binary_c(c_initial, c_res, c_num, lmh, display_all)
+        self.table = binary_c(c_initial, c_res, c_num, lmh)
         self.len = 2 ** c_num -1
 
     def to_csv(self, directory=os.getcwd()):
@@ -68,6 +65,14 @@ class Lcbin:
         filename = ''.join(name)
         self.table.to_csv(filename)
 
+    def to_excel(self, directory=os.getcwd()):
+        """doc"""""
+        pass
+
+    def to_txt(self, directory=os.getcwd()):
+        """doc"""""
+        pass
+
     def pprint(self):
         """print all rows & columns"""""
         with pd.option_context('display.max_rows',
@@ -80,7 +85,7 @@ def binary_c(c_initial: float,
              c_res: float,
              c_num: int,
              lmh: float,
-             display_all=False) -> pd.DataFrame:
+             ) -> pd.DataFrame:
     """Binary Capacitance table
     インダクタンス容量からコンデンサのバイナリ
     組み合わせテーブルを作成するpythonスクリプト
@@ -97,7 +102,6 @@ def binary_c(c_initial: float,
         c_res: Resolution of capacitance[pf](float)
         c_num: Number of capacitance[uF](int)
         lmh: Indactance[mH](float)
-        display_all: default False(bool)
     return:
         df: Binary table (pd.DataFrame)
     """
@@ -116,9 +120,6 @@ def binary_c(c_initial: float,
     fHz = 1 / (2 * np.pi * np.sqrt(df.CpF * 1e-12 * lmh * 1e-3))
     df['fkHz'] = fHz / 1000
     df.drop(0, inplace=True)
-    if display_all:
-        pd.options.display.max_rows = len(df)
-        pd.options.display.width = 0
     return df
 
 
@@ -131,9 +132,10 @@ def main(argv):
             int(argv[3]),  # c_num
             float(argv[4])  # lmh
         ]
-        lc_table = binary_c(*lc_args, display_all=True)
-        return lc_table
-    return binary_c.__doc__
+        Lcbin(*lc_args).pprint()
+        return ''  # for chomp last 'None' word
+    else:
+        return Lcbin.__init__.__doc__
 
 
 if __name__ == '__main__':
