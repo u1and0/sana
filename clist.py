@@ -5,6 +5,7 @@
 * def combi_proposer()
 """
 from itertools import combinations_with_replacement
+from itertools import chain
 import json
 CAPLIST = [
     10, 11, 12, 13, 15, 16, 18, 20, 22, 24, 27, 30, 33, 36, 39, 43, 47, 51, 56,
@@ -58,9 +59,16 @@ def combi_propose_all(combo: int, *vars_list) -> dict:
     return {k: combi_proposer(k, combo) for k in vars_list}
 
 
-# def to_json(obj, filename):
-#     f = open(filename, 'w')
-#     json.dump(obj, f, )
+def has_value(var, combi_proposer_dict):
+    """`combi_proposer_all()`の結果から、
+    共通で含まれるvarを持つkeyをリストアップする
+    """
+    # `list(chain.from_iterable(v))` <- flatten tuple of tuple
+    return [
+        k for k, v in combi_proposer_dict.items()
+        if var in list(chain.from_iterable(v))
+    ]
+
 
 if __name__ == '__main__':
     import doctest
