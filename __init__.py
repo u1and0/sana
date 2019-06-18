@@ -119,3 +119,4 @@ from .dbmw import db2mw
 from .dbmw import mw2db
 from .lcbin import Lcbin
 from .lcbin import binary_c
+from .lcbin import capcomb

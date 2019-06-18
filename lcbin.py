@@ -3,6 +3,24 @@
 import os
 import numpy as np
 import pandas as pd
+from itertools import combinations_with_replacement
+
+CAPLIST = [
+    10, 11, 12, 13, 15, 16, 18, 20, 22, 24, 27, 30, 33, 36, 39, 43, 47, 51, 56,
+    62, 68, 75, 82, 91, 100, 110, 120, 130, 150, 160, 180, 200, 220, 240, 270,
+    300, 330, 360, 390, 430, 470, 510, 560, 620, 680, 750, 820, 910, 1000,
+    1100, 1200, 1500, 1800, 2200, 2400, 2700
+]
+
+
+def capcomb(cap: int, combo: int = 2, caplist: list = CAPLIST) -> tuple:
+    """コンデンサの組み合わせ計算
+    caplistから重複ありの組み合わせをccombに格納
+    指定したコンデンサ要領の組み合わせtupleを返す
+    """
+    ccomb = list(combinations_with_replacement(caplist, combo))
+    cpat = [sum(tpl) for tpl in combinations_with_replacement(caplist, combo)]
+    return ccomb[cpat.index(cap)]
 
 
 class Lcbin:
@@ -11,11 +29,7 @@ class Lcbin:
     組み合わせテーブルを作成するpythonスクリプト
     """
 
-    def __init__(self,
-                 c_initial: float,
-                 c_res: float,
-                 c_num: int,
-                 lmh: float):
+    def __init__(self, c_initial: float, c_res: float, c_num: int, lmh: float):
         """
         usage:
             `x = Lcbin(c_initial=120, c_res=5, c_num=9, lmh=39)`
@@ -48,7 +62,7 @@ class Lcbin:
         self.c_num = c_num
         self.lmh = lmh
         self.table = binary_c(c_initial, c_res, c_num, lmh)
-        self.len = 2 ** c_num -1
+        self.len = 2**c_num - 1
 
     def to_csv(self, directory=os.getcwd()):
         """save to csv.
@@ -66,26 +80,22 @@ class Lcbin:
         self.table.to_csv(filename)
 
     def to_excel(self, directory=os.getcwd()):
-        """doc"""""
+        """doc"""
         pass
 
     def to_txt(self, directory=os.getcwd()):
-        """doc"""""
+        """doc"""
         pass
 
     def pprint(self):
-        """print all rows & columns"""""
-        with pd.option_context('display.max_rows',
-                               self.len,
-                               'display.width',
+        """print all rows & columns""" ""
+        with pd.option_context('display.max_rows', self.len, 'display.width',
                                0):
             print(self.table)
 
-def binary_c(c_initial: float,
-             c_res: float,
-             c_num: int,
-             lmh: float,
-             ) -> pd.DataFrame:
+
+def binary_c(c_initial: float, c_res: float, c_num: int,
+             lmh: float) -> pd.DataFrame:
     """Binary Capacitance table
     インダクタンス容量からコンデンサのバイナリ
     組み合わせテーブルを作成するpythonスクリプト
