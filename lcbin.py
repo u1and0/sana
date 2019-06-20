@@ -48,12 +48,10 @@ class Lcbin:
         self.c_res = c_res
         self.c_num = c_num
         self.lmh = lmh
-        self.array = c_binary(self.c_num)
-        self.table = lc_table(self.c_initial, self.c_res, self.c_num, self.lmh,
-                              self.array)
-        self.len = 2**c_num - 1
+        self.array = self._array()
+        self.table = self._table()
 
-    def to_csv(self, directory=os.getcwd()):
+    def to_csv(self, directory=os.getcwd(), sort: str = None):
         """save to csv.
         default current directory
         """
@@ -66,65 +64,84 @@ class Lcbin:
         name.insert(0, '/')
         name.insert(0, directory)
         filename = ''.join(name)
-        self.table.to_csv(filename)
+        if sort:
+            self.table.sort_values(sort).to_csv(filename)
+        else:
+            self.table.to_csv(filename)
 
-    def pprint(self):
+    def pprint(self, sort: str = None):
         """print all rows & columns""" ""
-        with pd.option_context('display.max_rows', self.len, 'display.width',
-                               0):
-            print(self.table)
+        with pd.option_context(
+                'display.max_rows',
+                2**self.c_num - 1,  # all rows
+                'display.width',
+                0):
+            if sort:
+                print(self.table.sort_values(sort))
+            else:
+                print(self.table)
+
+    def _array(self) -> np.ndarray:
+        """Binary Capacitance table
+        インダクタンス容量からコンデンサのバイナリ
+        組み合わせテーブルを作成するpythonスクリプト
+
+        usage:
+            `Lcbin.array(c_initial=120, c_res=5, c_num=9, lmh=39)`
+            コンデンサを9チャンネル用意し、
+            120pFのコンデンサから倍倍に9-1回増えて
+            最も大きい一つのコンデンサ容量が120 + 5*2**8=1400pF
+            接続するインダクタンスが39mHの場合
+            同調周波数が最高72kHz, 最低15kHz
+        args:
+            c_initial: Minimum Capacitance[pf](float)
+            c_res: Resolution of capacitance[pf](float)
+            c_num: Number of capacitance[uF](int)
+            lmh: Indactance[mH](float)
+        return:
+            df: Binary table (pd.DataFrame)
+        """
+        # ':0{}b'.format(_i, c_num) <- c_numの数だけ0-paddingし、_iを二進数に変換する
+        b_list = np.array([
+            '{:0{}b}'.format(_i, self.c_num)[::-1]
+            for _i in range(2**self.c_num)
+        ])
+        # b_list like...
+        # array(['000000000000', '100000000000', '010000000000', ...,
+        # '101111111111', '011111111111', '111111111111'], dtype='<U12')
+
+        b_array = np.array([list(b) for b in b_list[1:]]).astype(int)
+        # [1:] は0のみの行排除のため
+        # b_array like...
+        # [[0,0,1,...],
+        # [1,0,1,...],
+        # [1,1,1,...]]
+        return b_array
+
+    def _table(self) -> pd.DataFrame:
+        """arrayをpandas DataFrame化し、
+        合計キャパシタンス列(CpF) と 同調周波数列(fkHz) を追加するメソッド
+        """
+        c_list = [
+            self.c_initial + self.c_res * 2**_c for _c in range(self.c_num)
+        ]
+        blc_df = pd.DataFrame(self.array, columns=c_list)
+
+        # Capacitance column
+        blc_df['CpF'] = (blc_df.columns * blc_df).sum(1)
+
+        # Frequency column
+        blc_df['fkHz'] = syncf(self.lmh * 1e-3, blc_df.CpF * 1e-12) / 1000
+        return blc_df
+
+    def channels(self, ix):
+        """self.tableの行数を引数に、ONにするビットフラグをリストで返す"""
+        return [i for i, b in enumerate(self.array[ix], start=1) if b]
 
 
-def c_binary(c_num: int) -> np.ndarray:
-    """Binary Capacitance table
-    インダクタンス容量からコンデンサのバイナリ
-    組み合わせテーブルを作成するpythonスクリプト
-
-    usage:
-        `c_binary(c_initial=120, c_res=5, c_num=9, lmh=39)`
-        コンデンサを9チャンネル用意し、
-        120pFのコンデンサから倍倍に9-1回増えて
-        最も大きい一つのコンデンサ容量が120 + 5*2**8=1400pF
-        接続するインダクタンスが39mHの場合
-        同調周波数が最高72kHz, 最低15kHz
-    args:
-        c_initial: Minimum Capacitance[pf](float)
-        c_res: Resolution of capacitance[pf](float)
-        c_num: Number of capacitance[uF](int)
-        lmh: Indactance[mH](float)
-    return:
-        df: Binary table (pd.DataFrame)
-    """
-    # ':0{}b'.format(_i, c_num) <- c_numの数だけ0-paddingし、_iを二進数に変換する
-    b_list = np.array(
-        ['{:0{}b}'.format(_i, c_num)[::-1] for _i in range(2**c_num)])
-    # b_list like...
-    # array(['000000000000', '100000000000', '010000000000', ...,
-    # '101111111111', '011111111111', '111111111111'], dtype='<U12')
-
-    b_array = np.array([list(b) for b in b_list[1:]]).astype(int)
-    # [1:] は0のみの行排除のため
-    # b_array like...
-    # [[0,0,1,...],
-    # [1,0,1,...],
-    # [1,1,1,...]]
-    return b_array
-
-
-def lc_table(c_initial: float, c_res: float, c_num: int, lmh: float,
-             b_array: np.ndarray) -> pd.DataFrame:
-    """doc"""
-    c_list = [c_initial + c_res * 2**_c for _c in range(c_num)]
-    blc_df = pd.DataFrame(b_array, columns=c_list)
-
-    # Capacitance column
-    blc_df['CpF'] = (blc_df.columns * blc_df).sum(1)
-
-    # Frequency column
-    _l = lmh * 1e-3
-    _c = blc_df.CpF * 1e-12
-    blc_df['fkHz'] = 1e-3 / (2 * np.pi * np.sqrt(_l * _c))
-    return blc_df
+def syncf(l_, c_):
+    """同調周波数を返す"""
+    return 1 / (2 * np.pi * np.sqrt(l_ * c_))
 
 
 def main(argv):
