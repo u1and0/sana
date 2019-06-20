@@ -39,12 +39,18 @@ class Lcbin:
         `x.to_csv()`
         条件をパースしてcsvファイルを生成する。
         引数directoryを指定することで所定のディレクトリに保存する。
+
+        >>> x = Lcbin(160, 2, 12, 13.5)
+        >>> len(x.table) == x.len
+        True
         """
         self.c_initial = c_initial
         self.c_res = c_res
         self.c_num = c_num
         self.lmh = lmh
-        self.table = binary_c(c_initial, c_res, c_num, lmh)
+        self.array = c_binary(self.c_num)
+        self.table = lc_table(self.c_initial, self.c_res, self.c_num, self.lmh,
+                              self.array)
         self.len = 2**c_num - 1
 
     def to_csv(self, directory=os.getcwd()):
@@ -62,14 +68,6 @@ class Lcbin:
         filename = ''.join(name)
         self.table.to_csv(filename)
 
-    def to_excel(self, directory=os.getcwd()):
-        """doc"""
-        pass
-
-    def to_txt(self, directory=os.getcwd()):
-        """doc"""
-        pass
-
     def pprint(self):
         """print all rows & columns""" ""
         with pd.option_context('display.max_rows', self.len, 'display.width',
@@ -77,14 +75,13 @@ class Lcbin:
             print(self.table)
 
 
-def binary_c(c_initial: float, c_res: float, c_num: int,
-             lmh: float) -> pd.DataFrame:
+def c_binary(c_num: int) -> np.ndarray:
     """Binary Capacitance table
     インダクタンス容量からコンデンサのバイナリ
     組み合わせテーブルを作成するpythonスクリプト
 
     usage:
-        `binary_c(c_initial=120, c_res=5, c_num=9, lmh=39)`
+        `c_binary(c_initial=120, c_res=5, c_num=9, lmh=39)`
         コンデンサを9チャンネル用意し、
         120pFのコンデンサから倍倍に9-1回増えて
         最も大きい一つのコンデンサ容量が120 + 5*2**8=1400pF
@@ -98,22 +95,36 @@ def binary_c(c_initial: float, c_res: float, c_num: int,
     return:
         df: Binary table (pd.DataFrame)
     """
-    # Binary columns
-    # 二進数表記に変換
-    bin_list = [list(format(_, 'b'))[::-1] for _ in range(2**c_num)]
-    c_list = [c_res * 2**_ for _ in range(c_num)]
-    df = pd.DataFrame(bin_list, columns=c_list).fillna(0)
+    # ':0{}b'.format(_i, c_num) <- c_numの数だけ0-paddingし、_iを二進数に変換する
+    b_list = np.array(
+        ['{:0{}b}'.format(_i, c_num)[::-1] for _i in range(2**c_num)])
+    # b_list like...
+    # array(['000000000000', '100000000000', '010000000000', ...,
+    # '101111111111', '011111111111', '111111111111'], dtype='<U12')
 
-    # Capacitance columns
-    csum = np.arange(0, sum(c_list) + 1, c_res)
-    df.columns += c_initial
-    df['CpF'] = csum + c_initial  # list + float **broadcast adding**
+    b_array = np.array([list(b) for b in b_list[1:]]).astype(int)
+    # [1:] は0のみの行排除のため
+    # b_array like...
+    # [[0,0,1,...],
+    # [1,0,1,...],
+    # [1,1,1,...]]
+    return b_array
 
-    # Frequency columns
-    fHz = 1 / (2 * np.pi * np.sqrt(df.CpF * 1e-12 * lmh * 1e-3))
-    df['fkHz'] = fHz / 1000
-    df.drop(0, inplace=True)
-    return df
+
+def lc_table(c_initial: float, c_res: float, c_num: int, lmh: float,
+             b_array: np.ndarray) -> pd.DataFrame:
+    """doc"""
+    c_list = [c_initial + c_res * 2**_c for _c in range(c_num)]
+    blc_df = pd.DataFrame(b_array, columns=c_list)
+
+    # Capacitance column
+    blc_df['CpF'] = (blc_df.columns * blc_df).sum(1)
+
+    # Frequency column
+    _l = lmh * 1e-3
+    _c = blc_df.CpF * 1e-12
+    blc_df['fkHz'] = 1e-3 / (2 * np.pi * np.sqrt(_l * _c))
+    return blc_df
 
 
 def main(argv):
