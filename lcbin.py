@@ -79,10 +79,13 @@ class Lcbin(pd.DataFrame):
 
 
         # CpF のテスト
-
-        # c_initialが0のときは合計コンデンサの値はインデックスとc_resの掛け算
-        # >>> np.all(bc.index * 10, bc.CpF)
-        # True
+        >>> bl = bc.array[8]
+        >>> bin2int(reversed(bl))
+        8
+        >>> ar = np.arange(2**6)
+        >>> test = np.array([bin2int(reversed(bl)) for bl in bc.array])
+        >>> np.array_equal(test, ar)
+        True
 
         # fkHz のテスト
         # 同調周波数とコンデンサからインダクタンスを逆算
@@ -224,14 +227,18 @@ def int2bin(int_i: int, zero_pad: int) -> str:
     return '{:0{}b}'.format(int_i, zero_pad)
 
 
-def bin2in(bin_b, zero_pad):
+def bin2int(bc_array):
+    """テスト用関数(int2bin()の逆関数)
+    >>> bin2int([0, 1, 1])
+    3
+    >>> bin2int([0, 0, 1, 1])
+    3
+    >>> bin2int([1, 1, 1, 1, 1])
+    31
     """
-    >>> int2bin(3, 4)
-    '0011'
-    >>> int2bin(5, 5)
-    '00101'
-    """
-    return '{:0{}b}'.format(int_i, zero_pad)
+    mp_str = map(str, bc_array)
+    joined_str = ','.join(mp_str).replace(',', '')
+    return int(joined_str, 2)  # 2進数の2
 
 
 def binary_array(c_num) -> np.ndarray:
@@ -281,7 +288,7 @@ def binary_array(c_num) -> np.ndarray:
     True
     """
     # ':0{}b'.format(_i, c_num) <- c_numの数だけ0-paddingし、_iを二進数に変換する
-    b_list = np.array([int2bin(_i, c_num)[::-1] for _i in range(2**c_num)])
+    b_list = np.array([reversed(int2bin(_i, c_num)) for _i in range(2**c_num)])
     # b_list like...
     # array(['000000000000', '100000000000', '010000000000', ...,
     # '101111111111', '011111111111', '111111111111'], dtype='<U12')
