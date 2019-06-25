@@ -147,6 +147,11 @@ class Lcbin(pd.DataFrame):
 
     def channels(self, ix):
         """self.tableの行数を引数に、ONにするビットフラグをリストで返す
+
+          channles 1  2  3  4  5  6
+                   |  |  |  |  |  |
+            array([0, 1, 1, 0, 0, 0])
+
             >>> c_initial, c_res, c_num , lmh = 0, 100, 6, 10
             >>> bc = Lcbin(c_initial, c_res, c_num, lmh)
             >>> bc.channels(0)
@@ -156,27 +161,24 @@ class Lcbin(pd.DataFrame):
             [1]
 
             >>> bc.channels(-1)
+            [1, 2, 3, 4, 5, 6]
+
+            >>> bc.channels(len(bc))
             Traceback (most recent call last):
             ...
-            ValueError: -1 is not in list
+            IndexError: index 64 is out of bounds for axis 0 with size 64
 
-            >>> bc.channels(2**c_num-1)
+            >>> bc.channels(len(bc)-1)
             [1, 2, 3, 4, 5, 6]
 
             >>> bc.array[6]
             array([0, 1, 1, 0, 0, 0])
-
             >>> bc.channels(6)
             [2, 3]
 
-            # >>> test_bin = np.array([1, 2, 4, 8, 16, 32])
-            # >>> c = bc.channels(10)
-            # >>> c_initial * 2** == bc.CpF[10]
-            # 18
+            2チャンネルと3チャンネルをONにしろ、という意味
             """
-        li = list(self.index)
-        _ix = li.index(ix)
-        return [i for i, b in enumerate(self.array[_ix], start=1) if b]
+        return [i for i, b in enumerate(self.array[ix], start=1) if b]
 
 
 def dump(self):
