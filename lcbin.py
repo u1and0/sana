@@ -5,6 +5,7 @@
 import os
 import numpy as np
 import pandas as pd
+from IPython.display import display
 
 
 class Lcbin(pd.DataFrame):
@@ -208,7 +209,7 @@ class Lcbin(pd.DataFrame):
 def dump(self):
     """print all rows & columns""" ""
     with pd.option_context('display.max_rows', len(self), 'display.width', 0):
-        print(self)
+        display(self)
 
 
 setattr(pd.DataFrame, 'dump', dump)
