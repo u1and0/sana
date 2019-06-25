@@ -118,6 +118,5 @@ from .sana import nearest_x
 from .dbmw import db2mw
 from .dbmw import mw2db
 from .lcbin import Lcbin
-from .lcbin import binary_c
 from .clist import combi_proposer
 from .clist import combi_propose_all
