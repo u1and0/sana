@@ -45,45 +45,52 @@ class Lcbin(pd.DataFrame):
         引数directoryを指定することで所定のディレクトリに保存する。
 
         # 行数テスト
-        # 行の長さは2のn乗から1を減じたもの
+        # 行の長さは2のn乗
         >>> n=6
         >>> bc = Lcbin(0, 10, n, 100)
-        >>> len(bc) == 2**n -1
+        >>> len(bc) == 2**n
         True
 
-        # index 作成のテスト
+        # index のテスト
+        # stop=64 = 2 ** 6
         >>> bc.index
-        RangeIndex(start=1, stop=64, step=1)
+        RangeIndex(start=0, stop=64, step=1)
 
-        # columns 作成のテスト
+
+        # columns のテスト
         >>> bc.columns
         Index([10, 20, 40, 80, 160, 320, 'CpF', 'fkHz'], dtype='object')
 
-        # values 作成のテスト
+        # bc.array のテスト
         >>> bc.array[:5]
-        array([[1, 0, 0, 0, 0, 0],
+        array([[0, 0, 0, 0, 0, 0],
+               [1, 0, 0, 0, 0, 0],
                [0, 1, 0, 0, 0, 0],
                [1, 1, 0, 0, 0, 0],
-               [0, 0, 1, 0, 0, 0],
-               [1, 0, 1, 0, 0, 0]])
+               [0, 0, 1, 0, 0, 0]])
 
-        # 2の階上数列とかけて合計すると連番になる
-        >>> test_bin = [1, 2, 4, 8, 16, 32]
-        >>> sums = (bc.array * test_bin).sum(1)
-        >>> sums[:12]
-        array([ 1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12])
-        >>> np.array_equal(sums, np.arange(1, 2**n))
-        True
+        # # 2のn乗数列とかけて合計すると連番になる
+        # >>> test_bin = [1, 2, 4, 8, 16, 32]
+        # >>> sums = (bc.array * test_bin).sum(1)
+        # >>> sums[:12]
+        # array([ 0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11])
+        # >>> np.array_equal(sums, np.arange(2**n))
+        # True
+
+
+        # CpF のテスト
 
         # c_initialが0のときは合計コンデンサの値はインデックスとc_resの掛け算
-        >>> np.all(bc.index * 10, bc.CpF)
-        True
+        # >>> np.all(bc.index * 10, bc.CpF)
+        # True
 
+        # fkHz のテスト
         # 同調周波数とコンデンサからインダクタンスを逆算
         >>> j = 14
         >>> np.floor(1e3/(( 2*np.pi*bc.fkHz[j]*1e3 )**2 * bc.CpF[j]*1e-12))
         100.0
 
+        # === テストできないメソッド ===
         # >>> bc.dump(): すべての行列をプリント(省略しない)
         # >>> bc.to_csv(): 条件をパースしてファイル名を自動的にアサインしてcsvに保存
         """
@@ -94,7 +101,7 @@ class Lcbin(pd.DataFrame):
         self._lmh = lmh
 
         # index & columns
-        self.index = range(1, 2**c_num)
+        self.index = range(2**c_num)
         self.columns = c_list(c_initial, c_res, c_num)
 
         # binary array
@@ -140,9 +147,7 @@ class Lcbin(pd.DataFrame):
             >>> c_initial, c_res, c_num , lmh = 0, 100, 6, 10
             >>> bc = Lcbin(c_initial, c_res, c_num, lmh)
             >>> bc.channels(0)
-            Traceback (most recent call last):
-            ...
-            ValueError: 0 is not in list
+            []
 
             >>> bc.channels(1)
             [1]
@@ -156,10 +161,10 @@ class Lcbin(pd.DataFrame):
             [1, 2, 3, 4, 5, 6]
 
             >>> bc.array[6]
-            array([1, 1, 1, 0, 0, 0])
+            array([0, 1, 1, 0, 0, 0])
 
             >>> bc.channels(6)
-            [1, 2, 3]
+            [2, 3]
 
             # >>> test_bin = np.array([1, 2, 4, 8, 16, 32])
             # >>> c = bc.channels(10)
@@ -209,6 +214,26 @@ def c_list(c_initial, c_res, c_num):
     return [c_initial + c_res * 2**_c for _c in range(c_num)]
 
 
+def int2bin(int_i: int, zero_pad: int) -> str:
+    """
+    >>> int2bin(3, 4)
+    '0011'
+    >>> int2bin(5, 5)
+    '00101'
+    """
+    return '{:0{}b}'.format(int_i, zero_pad)
+
+
+def bin2in(bin_b, zero_pad):
+    """
+    >>> int2bin(3, 4)
+    '0011'
+    >>> int2bin(5, 5)
+    '00101'
+    """
+    return '{:0{}b}'.format(int_i, zero_pad)
+
+
 def binary_array(c_num) -> np.ndarray:
     """Binary Capacitance table
     インダクタンス容量からコンデンサのバイナリ
@@ -230,12 +255,14 @@ def binary_array(c_num) -> np.ndarray:
         df: Binary table (pd.DataFrame)
 
     >>> binary_array(2)
-    array([[1, 0],
+    array([[0, 0],
+           [1, 0],
            [0, 1],
            [1, 1]])
 
     >>> binary_array(3)
-    array([[1, 0, 0],
+    array([[0, 0, 0],
+           [1, 0, 0],
            [0, 1, 0],
            [1, 1, 0],
            [0, 0, 1],
@@ -244,23 +271,22 @@ def binary_array(c_num) -> np.ndarray:
            [1, 1, 1]])
 
     >>> binary_array(6)[0]
-    array([1, 0, 0, 0, 0, 0])
+    array([0, 0, 0, 0, 0, 0])
 
     >>> binary_array(6)[-1]
     array([1, 1, 1, 1, 1, 1])
 
     >>> n = 10
-    >>> binary_array(n).shape == (2**n-1, n)
+    >>> binary_array(n).shape == (2**n, n)
     True
     """
     # ':0{}b'.format(_i, c_num) <- c_numの数だけ0-paddingし、_iを二進数に変換する
-    b_list = np.array(
-        ['{:0{}b}'.format(_i, c_num)[::-1] for _i in range(2**c_num)])
+    b_list = np.array([int2bin(_i, c_num)[::-1] for _i in range(2**c_num)])
     # b_list like...
     # array(['000000000000', '100000000000', '010000000000', ...,
     # '101111111111', '011111111111', '111111111111'], dtype='<U12')
 
-    b_array = np.array([list(b) for b in b_list[1:]]).astype(int)
+    b_array = np.array([list(b) for b in b_list]).astype(int)
     # [1:] は0のみの行排除のため
     # b_array like...
     # [[0,0,1,...],
