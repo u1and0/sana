@@ -1,26 +1,45 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """ コンデンサ組み合わせバイナリ表を出力する計算ライブラリ"""
+
 import os
 import numpy as np
 import pandas as pd
 
 
 class Lcbin(pd.DataFrame):
-    """Binary Capacitance table
-    インダクタンス容量からコンデンサのバイナリ
-    組み合わせテーブルを作成するpythonスクリプト
-    """
+    """Binary Capacitance table"""
 
     def __init__(self, c_initial: float, c_res: float, c_num: int, lmh: float):
         """
+        # Quick Start:
+        >>> Lcbin(0, 10, 4, 12.5)
+            10  20  40  80  CpF        fkHz
+        0    0   0   0   0    0         inf
+        1    1   0   0   0   10  450.158158
+        2    0   1   0   0   20  318.309886
+        3    1   1   0   0   30  259.898934
+        4    0   0   1   0   40  225.079079
+        5    1   0   1   0   50  201.316848
+        6    0   1   1   0   60  183.776298
+        7    1   1   1   0   70  170.143791
+        8    0   0   0   1   80  159.154943
+        9    1   0   0   1   90  150.052719
+        10   0   1   0   1  100  142.352509
+        11   1   1   0   1  110  135.727792
+        12   0   0   1   1  120  129.949467
+        13   1   0   1   1  130  124.851409
+        14   0   1   1   1  140  120.309828
+        15   1   1   1   1  150  116.230337
+
         usage:
-            `x = Lcbin(c_initial=120, c_res=5, c_num=9, lmh=39)`
-            コンデンサを9チャンネル用意し、
-            120pFのコンデンサから倍倍に9-1回増えて
-            最も大きい一つのコンデンサ容量が120 + 5*2**8=1400pF
-            接続するインダクタンスが39mHの場合
-            同調周波数が最高72kHz, 最低15kHz
+            `x = Lcbin(c_initial=0, c_res=10, c_num=4, lmh=12.5)`
+            コンデンサを4チャンネル(c_num)用意し、
+            それぞれ10, 20, 40, 80pFを割り当てる。
+            増加率が10(c_res)から始まり倍々に増えていく(+10, +20, +40, ...)
+
+            CpF列にコンデンサの合計値を出力する
+            fkHz列にlmh(=接続するインダクタンス)と計算した同調周波数を出力する
 
         args:
             c_initial: Minimum Capacitance[pf](float)
@@ -28,9 +47,7 @@ class Lcbin(pd.DataFrame):
             c_num: Number of capacitance[uF](int)
             lmh: Indactance[mH](float)
 
-        return:
-            df: Binary table (pd.DataFrame)
-            `bc.table`
+        self: Binary table (pd.DataFrame)
             ビットテーブルを出力する
             ビットテーブルは行番号1から始まる。
             行番号0はコンデンサなし、つまり非同調なので考える必要がない。
@@ -40,9 +57,16 @@ class Lcbin(pd.DataFrame):
         LCバイナリと合計容量CpF, 同調周波数fkHzを出力する
         pandas.DataFrameを継承
 
+        `bc.channels()`
+        ONにするビットフラグを
+
         `bc.to_csv()`
         条件をパースしてcsvファイルを生成する。
         引数directoryを指定することで所定のディレクトリに保存する。
+
+        `bc.dump()`
+        pandas 初期設定の省略表示を無視して全行列を標準出力に表示
+
 
         # 行数テスト
         # 行の長さは2のn乗
