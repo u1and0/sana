@@ -110,8 +110,8 @@ class Lcbin(pd.DataFrame):
         # binary array
         # UserWarning: Pandas doesn't allow columns to be created
         # via a new attribute name <- 仕方ないワーニングがでる
-        # 今後array列が作れなくなる
-        self.array = self.iloc[:, :c_num].values  # 0,1部分のみ
+        # 「今後array列が作れなくなる副作用がある」という意味のワーニング
+        self.array = self.iloc[:, :c_num].values  # Do not use `bc['array']`
 
         # 合計コンデンサ列CpF & 同調周波数列fkHz
         self['CpF'] = (self.columns.values * self.array).sum(1)
@@ -191,22 +191,6 @@ setattr(pd.DataFrame, 'dump', dump)
 # === わざわざsetattrしている理由 ===
 # sort_values()メソッド使った後にもdumpしたいので、
 # Lcbinだけでなく、pandas.DataFrameにメソッドを割り当てたい
-
-# def _table(self) -> pd.DataFrame:
-#     """arrayをpandas DataFrame化し、
-#     合計キャパシタンス列(CpF) と 同調周波数列(fkHz) を追加するメソッド
-#     """
-#     c_list = [
-#         self._c_initial + self._c_res * 2**_c for _c in range(self._c_num)
-#     ]
-#     blc_df = pd.DataFrame(self.array, columns=c_list)
-#
-#     # Capacitance column
-#     blc_df['CpF'] = (blc_df.columns * blc_df).sum(1)
-#
-#     # Frequency column
-#     blc_df['fkHz'] = syncf(self._lmh * 1e-3, blc_df.CpF * 1e-12) / 1000
-#     return blc_df
 
 
 def c_list(c_initial, c_res, c_num):
