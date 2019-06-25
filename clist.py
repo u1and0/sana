@@ -3,10 +3,9 @@
 """ 組み合わせ計算に使用する計算ライブラリ"""
 from itertools import combinations_with_replacement
 from itertools import chain
-import json
 
 # E24系列
-CAPLIST = [
+CAPLIST_E24 = [
     10, 11, 12, 13, 15, 16, 18, 20, 22, 24, 27, 30, 33, 36, 39, 43, 47, 51, 56,
     62, 68, 75, 82, 91, 100, 110, 120, 130, 150, 160, 180, 200, 220, 240, 270,
     300, 330, 360, 390, 430, 470, 510, 560, 620, 680, 750, 820, 910, 1000,
@@ -14,7 +13,7 @@ CAPLIST = [
 ]
 
 
-def combi_proposer(combo: int, var, caplist: list = CAPLIST) -> tuple:
+def combi_proposer(combo: int, var, caplist: list = CAPLIST_E24) -> tuple:
     """合計してvarになる組み合わせをリストする
     組み合わせパターンをcomboに指定する(2組の合計を出すなら、combo=2)
     caplistから重複ありの組み合わせをc_combinationsに格納
@@ -38,7 +37,7 @@ def combi_proposer(combo: int, var, caplist: list = CAPLIST) -> tuple:
     ((10, 10, 16), (10, 11, 15), (10, 13, 13), (11, 12, 13), (12, 12, 12))
 
     # [::2]で1個置きにすることでE12系列にすると結果が少なくなる。
-    >>> combi_proposer(3, 36, CAPLIST[::2])
+    >>> combi_proposer(3, 36, CAPLIST_E24[::2])
     ((12, 12, 12),)
 
     # varにリストかタプルを指定すると、結果をディクショナリで返す
@@ -62,7 +61,7 @@ def has_value(var, combi_proposer_dict):
     """`combi_proposer_all()`の結果から、
     共通で含まれるvarを持つkeyをリストアップする
 
-    >>> cli = combi_proposer(3, [220, 240, 260], CAPLIST[::2])
+    >>> cli = combi_proposer(3, [220, 240, 260], CAPLIST_E24[::2])
     >>> cli
     {220: ((18, 22, 180), (18, 82, 120), (56, 82, 82)), \
 240: ((10, 10, 220), (22, 68, 150), (27, 33, 180)), \
