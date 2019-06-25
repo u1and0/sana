@@ -30,53 +30,101 @@ class Lcbin(pd.DataFrame):
 
         return:
             df: Binary table (pd.DataFrame)
-            `x.table`
+            `bc.table`
             ビットテーブルを出力する
+            ビットテーブルは行番号1から始まる。
+            行番号0はコンデンサなし、つまり非同調なので考える必要がない。
+            そのため、あらかじめ削除してあるので、行番号は1から始まる。
 
-        `x.table`
+        `bc`
         LCバイナリと合計容量CpF, 同調周波数fkHzを出力する
+        pandas.DataFrameを継承
 
-        `x.to_csv()`
+        `bc.to_csv()`
         条件をパースしてcsvファイルを生成する。
         引数directoryを指定することで所定のディレクトリに保存する。
 
-        >>> x = Lcbin(160, 2, 12, 13.5)
-        >>> len(x.table) == x.len
+        # 行数テスト
+        # 行の長さは2のn乗から1を減じたもの
+        >>> n=6
+        >>> bc = Lcbin(0, 10, n, 100)
+        >>> len(bc) == 2**n -1
         True
+
+        # index 作成のテスト
+        >>> bc.index
+        RangeIndex(start=1, stop=64, step=1)
+
+        # columns 作成のテスト
+        >>> bc.columns
+        Index([10, 20, 40, 80, 160, 320, 'CpF', 'fkHz'], dtype='object')
+
+        # values 作成のテスト
+        >>> bc.array[:5]
+        array([[1, 0, 0, 0, 0, 0],
+               [0, 1, 0, 0, 0, 0],
+               [1, 1, 0, 0, 0, 0],
+               [0, 0, 1, 0, 0, 0],
+               [1, 0, 1, 0, 0, 0]])
+
+        # 2の階上数列とかけて合計すると連番になる
+        >>> test_bin = [1, 2, 4, 8, 16, 32]
+        >>> sums = (bc.array * test_bin).sum(1)
+        >>> sums[:12]
+        array([ 1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12])
+        >>> np.array_equal(sums, np.arange(1, 2**n))
+        True
+
+        # c_initialが0のときは合計コンデンサの値はインデックスとc_resの掛け算
+        >>> np.all(bc.index * 10, bc.CpF)
+        True
+
+        # 同調周波数とコンデンサからインダクタンスを逆算
+        >>> j = 14
+        >>> np.floor(1e3/(( 2*np.pi*bc.fkHz[j]*1e3 )**2 * bc.CpF[j]*1e-12))
+        100.0
+
+        # >>> bc.dump(): すべての行列をプリント(省略しない)
+        # >>> bc.to_csv(): 条件をパースしてファイル名を自動的にアサインしてcsvに保存
         """
-        super().__init__(data=binary_array(c_num),
-                         columns=c_list(c_initial, c_res, c_num))
+        super().__init__(binary_array(c_num))
         self._c_initial = c_initial
         self._c_res = c_res
         self._c_num = c_num
         self._lmh = lmh
-        self.array = binary_array(self._c_num)
-        # self.table = self._table()
 
-    def csum(self):
-        """binary tableに応じてCapacitanceの合計値を列加える"""
-        # c_df = self.copy()
-        self['CpF'] = (self.columns * self).sum(1)
-        return self
+        # index & columns
+        self.index = range(1, 2**c_num)
+        self.columns = c_list(c_initial, c_res, c_num)
 
-    def fsync(self):
-        """Frequency column"""
+        # binary array
+        # UserWarning: Pandas doesn't allow columns to be created
+        # via a new attribute name <- 仕方ないワーニングがでる
+        # 今後array列が作れなくなる
+        self.array = self.iloc[:, :c_num].values  # 0,1部分のみ
 
-        def _sync(l_, c_):
-            """同調周波数を返す"""
-            return 1 / (2 * np.pi * np.sqrt(l_ * c_))
+        # 合計コンデンサ列CpF & 同調周波数列fkHz
+        self['CpF'] = (self.columns.values * self.array).sum(1)
 
-        self['fkHz'] = _sync(self.lmh * 1e-3, self.CpF * 1e-12) / 1000
-        return self
+        def resonance_freq(l, c):
+            """同調周波数を返すクロージャ"""
+            return 1 / (2 * np.pi * np.sqrt(l * c))
+
+        self['fkHz'] = resonance_freq(self._lmh * 1e-3,
+                                      self.CpF * 1e-12) / 1000
 
     def to_csv(self, directory=os.getcwd(), sort: str = None):
         """save to csv.
         default current directory
+        インスタンス化した際のパラメータをパースして、ファイル名を自動的に決める
+        デフォルトではカレントディレクトリ下にファイルを保存する
         """
-        init = 'init' + str(self.c_initial)
-        res = 'res' + str(self.c_res)
-        pat = 'pat' + str(self.c_num)
-        lmh = 'l' + str(self.lmh)
+        init = 'init' + str(self._c_initial)
+        res = 'res' + str(self._c_res)
+        pat = 'pat' + str(self._c_num)
+        lmh = 'l' + str(self._lmh)
+
+        # ドットをp(pointの意味)に変換(ファイルネームに.は紛らわしい)
         name = [s.replace('.', 'p') for s in (init, res, pat, lmh)]
         name.append('.csv')
         name.insert(0, '/')
@@ -87,21 +135,59 @@ class Lcbin(pd.DataFrame):
         else:
             self.table.to_csv(filename)
 
+    def channels(self, ix):
+        """self.tableの行数を引数に、ONにするビットフラグをリストで返す
+            >>> c_initial, c_res, c_num , lmh = 0, 100, 6, 10
+            >>> bc = Lcbin(c_initial, c_res, c_num, lmh)
+            >>> bc.channels(0)
+            Traceback (most recent call last):
+            ...
+            ValueError: 0 is not in list
+
+            >>> bc.channels(1)
+            [1]
+
+            >>> bc.channels(-1)
+            Traceback (most recent call last):
+            ...
+            ValueError: -1 is not in list
+
+            >>> bc.channels(2**c_num-1)
+            [1, 2, 3, 4, 5, 6]
+
+            >>> bc.array[6]
+            array([1, 1, 1, 0, 0, 0])
+
+            >>> bc.channels(6)
+            [1, 2, 3]
+
+            # >>> test_bin = np.array([1, 2, 4, 8, 16, 32])
+            # >>> c = bc.channels(10)
+            # >>> c_initial * 2** == bc.CpF[10]
+            # 18
+            """
+        li = list(self.index)
+        _ix = li.index(ix)
+        return [i for i, b in enumerate(self.array[_ix], start=1) if b]
+
 
 def dump(self):
     """print all rows & columns""" ""
-    with pd.option_context('display.max_rows', len(self), 0):
+    with pd.option_context('display.max_rows', len(self), 'display.width', 0):
         print(self)
 
 
 setattr(pd.DataFrame, 'dump', dump)
+# === わざわざsetattrしている理由 ===
+# sort_values()メソッド使った後にもdumpしたいので、
+# Lcbinだけでなく、pandas.DataFrameにメソッドを割り当てたい
 
 # def _table(self) -> pd.DataFrame:
 #     """arrayをpandas DataFrame化し、
 #     合計キャパシタンス列(CpF) と 同調周波数列(fkHz) を追加するメソッド
 #     """
 #     c_list = [
-#         self.c_initial + self.c_res * 2**_c for _c in range(self.c_num)
+#         self._c_initial + self._c_res * 2**_c for _c in range(self._c_num)
 #     ]
 #     blc_df = pd.DataFrame(self.array, columns=c_list)
 #
@@ -109,17 +195,17 @@ setattr(pd.DataFrame, 'dump', dump)
 #     blc_df['CpF'] = (blc_df.columns * blc_df).sum(1)
 #
 #     # Frequency column
-#     blc_df['fkHz'] = syncf(self.lmh * 1e-3, blc_df.CpF * 1e-12) / 1000
+#     blc_df['fkHz'] = syncf(self._lmh * 1e-3, blc_df.CpF * 1e-12) / 1000
 #     return blc_df
 
 
-def channels(self, ix):
-    """self.tableの行数を引数に、ONにするビットフラグをリストで返す"""
-    return [i for i, b in enumerate(self.array[ix], start=1) if b]
-
-
 def c_list(c_initial, c_res, c_num):
-    """Capacitance list"""
+    """Capacitance list
+    >>> c_list(0, 10, 3)
+    [10, 20, 40]
+    >>> c_list(2,1,4)
+    [3, 4, 6, 10]
+    """
     return [c_initial + c_res * 2**_c for _c in range(c_num)]
 
 
@@ -142,6 +228,30 @@ def binary_array(c_num) -> np.ndarray:
         lmh: Indactance[mH](float)
     return:
         df: Binary table (pd.DataFrame)
+
+    >>> binary_array(2)
+    array([[1, 0],
+           [0, 1],
+           [1, 1]])
+
+    >>> binary_array(3)
+    array([[1, 0, 0],
+           [0, 1, 0],
+           [1, 1, 0],
+           [0, 0, 1],
+           [1, 0, 1],
+           [0, 1, 1],
+           [1, 1, 1]])
+
+    >>> binary_array(6)[0]
+    array([1, 0, 0, 0, 0, 0])
+
+    >>> binary_array(6)[-1]
+    array([1, 1, 1, 1, 1, 1])
+
+    >>> n = 10
+    >>> binary_array(n).shape == (2**n-1, n)
+    True
     """
     # ':0{}b'.format(_i, c_num) <- c_numの数だけ0-paddingし、_iを二進数に変換する
     b_list = np.array(
@@ -168,7 +278,7 @@ def main(argv):
             int(argv[3]),  # c_num
             float(argv[4])  # lmh
         ]
-        Lcbin(*lc_args).pprint()
+        Lcbin(*lc_args).dump()
         return ''  # for chomp last 'None' word
     return Lcbin.__init__.__doc__
 
