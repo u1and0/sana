@@ -1,26 +1,54 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """ コンデンサ組み合わせバイナリ表を出力する計算ライブラリ"""
+
 import os
+from IPython.display import display
 import numpy as np
 import pandas as pd
 
 
 class Lcbin(pd.DataFrame):
-    """Binary Capacitance table
-    インダクタンス容量からコンデンサのバイナリ
-    組み合わせテーブルを作成するpythonスクリプト
-    """
+    """Binary Capacitance table"""
 
-    def __init__(self, c_initial: float, c_res: float, c_num: int, lmh: float):
+    def __init__(
+            self,
+            c_res: float,
+            c_num: int,
+            lmh: float,
+            c_initial: float = 0,
+            c_para: float = 0,
+            c_ser: float = 0,
+    ):
         """
+        # Quick Start:
+        >>> Lcbin(10, 4, 12.5)
+            10  20  40  80  CpF        fkHz
+        0    0   0   0   0    0         inf
+        1    1   0   0   0   10  450.158158
+        2    0   1   0   0   20  318.309886
+        3    1   1   0   0   30  259.898934
+        4    0   0   1   0   40  225.079079
+        5    1   0   1   0   50  201.316848
+        6    0   1   1   0   60  183.776298
+        7    1   1   1   0   70  170.143791
+        8    0   0   0   1   80  159.154943
+        9    1   0   0   1   90  150.052719
+        10   0   1   0   1  100  142.352509
+        11   1   1   0   1  110  135.727792
+        12   0   0   1   1  120  129.949467
+        13   1   0   1   1  130  124.851409
+        14   0   1   1   1  140  120.309828
+        15   1   1   1   1  150  116.230337
+
         usage:
-            `x = Lcbin(c_initial=120, c_res=5, c_num=9, lmh=39)`
-            コンデンサを9チャンネル用意し、
-            120pFのコンデンサから倍倍に9-1回増えて
-            最も大きい一つのコンデンサ容量が120 + 5*2**8=1400pF
-            接続するインダクタンスが39mHの場合
-            同調周波数が最高72kHz, 最低15kHz
+            `x = Lcbin(c_initial=0, c_res=10, c_num=4, lmh=12.5)`
+            コンデンサを4チャンネル(c_num)用意し、
+            それぞれ10, 20, 40, 80pFを割り当てる。
+            増加率が10(c_res)から始まり倍々に増えていく(+10, +20, +40, ...)
+
+            CpF列にコンデンサの合計値を出力する
+            fkHz列にlmh(=接続するインダクタンス)と計算した同調周波数を出力する
 
         args:
             c_initial: Minimum Capacitance[pf](float)
@@ -28,9 +56,7 @@ class Lcbin(pd.DataFrame):
             c_num: Number of capacitance[uF](int)
             lmh: Indactance[mH](float)
 
-        return:
-            df: Binary table (pd.DataFrame)
-            `bc.table`
+        self: Binary table (pd.DataFrame)
             ビットテーブルを出力する
             ビットテーブルは行番号1から始まる。
             行番号0はコンデンサなし、つまり非同調なので考える必要がない。
@@ -40,14 +66,21 @@ class Lcbin(pd.DataFrame):
         LCバイナリと合計容量CpF, 同調周波数fkHzを出力する
         pandas.DataFrameを継承
 
+        `bc.channels()`
+        ONにするビットフラグを
+
         `bc.to_csv()`
         条件をパースしてcsvファイルを生成する。
         引数directoryを指定することで所定のディレクトリに保存する。
 
+        `bc.dump()`
+        pandas 初期設定の省略表示を無視して全行列を標準出力に表示
+
+
         # 行数テスト
         # 行の長さは2のn乗
         >>> n=6
-        >>> bc = Lcbin(0, 10, n, 100)
+        >>> bc = Lcbin(10, n, 100)
         >>> len(bc) == 2**n
         True
 
@@ -98,10 +131,14 @@ class Lcbin(pd.DataFrame):
         # >>> bc.to_csv(): 条件をパースしてファイル名を自動的にアサインしてcsvに保存
         """
         super().__init__(binary_array(c_num))
-        self._c_initial = c_initial
+        # Required
         self._c_res = c_res
         self._c_num = c_num
         self._lmh = lmh
+        # Not required
+        self._c_initial = c_initial
+        self._c_para = c_para
+        self._c_ser = c_ser
 
         # index & columns
         self.index = range(2**c_num)
@@ -114,7 +151,9 @@ class Lcbin(pd.DataFrame):
         self.array = self.iloc[:, :c_num].values  # Do not use `bc['array']`
 
         # 合計コンデンサ列CpF & 同調周波数列fkHz
-        self['CpF'] = (self.columns.values * self.array).sum(1)
+        self['CpF'] = c_para + (self.columns.values * self.array).sum(1)
+        if c_ser != 0:  # Evade 0 div warning
+            self.CpF = 1 / ((1 / self.CpF) + (1 / c_ser))
 
         def resonance_freq(l, c):
             """同調周波数を返すクロージャ"""
@@ -123,7 +162,7 @@ class Lcbin(pd.DataFrame):
         self['fkHz'] = resonance_freq(self._lmh * 1e-3,
                                       self.CpF * 1e-12) / 1000
 
-    def to_csv(self, directory=os.getcwd(), sort: str = None):
+    def to_csv(self, directory=os.getcwd(), sort: str = None, *args, **kwargs):
         """save to csv.
         default current directory
         インスタンス化した際のパラメータをパースして、ファイル名を自動的に決める
@@ -141,50 +180,50 @@ class Lcbin(pd.DataFrame):
         name.insert(0, directory)
         filename = ''.join(name)
         if sort:
-            self.table.sort_values(sort).to_csv(filename)
+            self.table.sort_values(sort).to_csv(filename, *args, **kwargs)
         else:
-            self.table.to_csv(filename)
+            self.table.to_csv(filename, *args, **kwargs)
 
     def channels(self, ix):
         """self.tableの行数を引数に、ONにするビットフラグをリストで返す
 
-          channles 1  2  3  4  5  6
-                   |  |  |  |  |  |
-            array([0, 1, 1, 0, 0, 0])
+        channles 1  2  3  4  5  6
+               |  |  |  |  |  |
+        array([0, 1, 1, 0, 0, 0])
 
-            >>> c_initial, c_res, c_num , lmh = 0, 100, 6, 10
-            >>> bc = Lcbin(c_initial, c_res, c_num, lmh)
-            >>> bc.channels(0)
-            []
+        >>> c_res, c_num , lmh, c_initial = 100, 6, 10, 0
+        >>> bc = Lcbin(c_res, c_num, lmh, c_initial)
+        >>> bc.channels(0)
+        []
 
-            >>> bc.channels(1)
-            [1]
+        >>> bc.channels(1)
+        [1]
 
-            >>> bc.channels(-1)
-            [1, 2, 3, 4, 5, 6]
+        >>> bc.channels(-1)
+        [1, 2, 3, 4, 5, 6]
 
-            >>> bc.channels(len(bc))
-            Traceback (most recent call last):
-            ...
-            IndexError: index 64 is out of bounds for axis 0 with size 64
+        >>> bc.channels(len(bc))
+        Traceback (most recent call last):
+        ...
+        IndexError: index 64 is out of bounds for axis 0 with size 64
 
-            >>> bc.channels(len(bc)-1)
-            [1, 2, 3, 4, 5, 6]
+        >>> bc.channels(len(bc)-1)
+        [1, 2, 3, 4, 5, 6]
 
-            >>> bc.array[6]
-            array([0, 1, 1, 0, 0, 0])
-            >>> bc.channels(6)
-            [2, 3]
+        >>> bc.array[6]
+        array([0, 1, 1, 0, 0, 0])
+        >>> bc.channels(6)
+        [2, 3]
 
-            2チャンネルと3チャンネルをONにしろ、という意味
-            """
+        2チャンネルと3チャンネルをONにしろ、という意味
+        """
         return [i for i, b in enumerate(self.array[ix], start=1) if b]
 
 
 def dump(self):
     """print all rows & columns""" ""
     with pd.option_context('display.max_rows', len(self), 'display.width', 0):
-        print(self)
+        display(self)
 
 
 setattr(pd.DataFrame, 'dump', dump)
@@ -233,7 +272,7 @@ def binary_array(c_num) -> np.ndarray:
     組み合わせテーブルを作成するpythonスクリプト
 
     usage:
-        `Lcbin.array(c_initial=120, c_res=5, c_num=9, lmh=39)`
+        `Lcbin.array(c_res=5, c_num=9, lmh=39, c_initial=120)`
         コンデンサを9チャンネル用意し、
         120pFのコンデンサから倍倍に9-1回増えて
         最も大きい一つのコンデンサ容量が120 + 5*2**8=1400pF
@@ -292,10 +331,12 @@ def main(argv):
     """call from shell function"""
     if len(argv) > 1:
         lc_args = [
-            float(argv[1]),  # c_initial
-            float(argv[2]),  # c_res
-            int(argv[3]),  # c_num
-            float(argv[4])  # lmh
+            float(argv[1]),  # c_res
+            int(argv[2]),  # c_num
+            float(argv[3]),  # lmh
+            float(argv[4]),  # c_initial
+            float(argv[5]),  # c_para
+            float(argv[6]),  # c_ser
         ]
         Lcbin(*lc_args).dump()
         return ''  # for chomp last 'None' word
