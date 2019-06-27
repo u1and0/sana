@@ -115,5 +115,6 @@ from .csv_reader import reader_N9010A
 from .describe_SN import describe_SN
 from .sana import Syncf
 from .sana import nearest_x
+from .dbmw import db2mw
+from .dbmw import mw2db
 from .lcbin import Lcbin
-from .lcbin import binary_c
