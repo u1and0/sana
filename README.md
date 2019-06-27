@@ -79,7 +79,8 @@ SN比の計算
 """ コンデンサ組み合わせバイナリ表を出力する計算ライブラリ
 
 ## Quick Start:
->>> Lcbin(0, 10, 4, 12.5)
+```python
+>>> Lcbin(10, 4, 12.5)
     10  20  40  80  CpF        fkHz
 0    0   0   0   0    0         inf
 1    1   0   0   0   10  450.158158
@@ -98,8 +99,7 @@ SN比の計算
 14   0   1   1   1  140  120.309828
 15   1   1   1   1  150  116.230337
 
-
-## usage:
+usage:
     `x = Lcbin(c_initial=0, c_res=10, c_num=4, lmh=12.5)`
     コンデンサを4チャンネル(c_num)用意し、
     それぞれ10, 20, 40, 80pFを割り当てる。
@@ -108,13 +108,13 @@ SN比の計算
     CpF列にコンデンサの合計値を出力する
     fkHz列にlmh(=接続するインダクタンス)と計算した同調周波数を出力する
 
-## args:
+args:
     c_initial: Minimum Capacitance[pf](float)
     c_res: Resolution of capacitance[pf](float)
     c_num: Number of capacitance[uF](int)
     lmh: Indactance[mH](float)
 
-## self: Binary table (pd.DataFrame)
+self: Binary table (pd.DataFrame)
     ビットテーブルを出力する
     ビットテーブルは行番号1から始まる。
     行番号0はコンデンサなし、つまり非同調なので考える必要がない。
@@ -135,11 +135,10 @@ ONにするビットフラグを
 pandas 初期設定の省略表示を無視して全行列を標準出力に表示
 
 
-```python
 # 行数テスト
 # 行の長さは2のn乗
 >>> n=6
->>> bc = Lcbin(0, 10, n, 100)
+>>> bc = Lcbin(10, n, 100)
 >>> len(bc) == 2**n
 True
 
@@ -188,4 +187,40 @@ True
 # === テストできないメソッド ===
 # >>> bc.dump(): すべての行列をプリント(省略しない)
 # >>> bc.to_csv(): 条件をパースしてファイル名を自動的にアサインしてcsvに保存
+```
+
+
+# clist.py
+合計してvarになる組み合わせをリストする
+組み合わせパターンをcomboに指定する(2組の合計を出すなら、combo=2)
+caplistから重複ありの組み合わせをc_combinationsに格納
+合計してvarになる組み合わせcaplist要素の組み合わせをtuple in tupleで返す
+
+## usage:
+combi_proposer(combo=2, var=22)  # 22を2個の合計で実現する組み合わせを列挙
+
+## test:
+
+```python
+>>> combi_proposer(2, 100)
+((18, 82),)
+
+>>> combi_proposer(2, 102)
+((11, 91), (20, 82), (27, 75), (51, 51))
+
+>>> combi_proposer(2, 36)
+((12, 24), (16, 20), (18, 18))
+
+# 組み合わせ数を増やすと当然結果が増える
+>>> combi_proposer(3, 36)
+((10, 10, 16), (10, 11, 15), (10, 13, 13), (11, 12, 13), (12, 12, 12))
+
+# [::2]で1個置きにすることでE12系列にすると結果が少なくなる。
+>>> combi_proposer(3, 36, CAPLIST_E24[::2])
+((12, 12, 12),)
+
+# varにリストかタプルを指定すると、結果をディクショナリで返す
+>>> combi_proposer(2, [22, 24, 26])
+{22: ((10, 12), (11, 11)), 24: ((11, 13), (12, 12)),\
+26: ((10, 16), (11, 15), (13, 13))}
 ```
