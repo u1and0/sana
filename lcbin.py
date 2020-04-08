@@ -113,10 +113,10 @@ class Lcbin(pd.DataFrame):
 
         # CpF のテスト
         >>> bl = bc.array[8]
-        >>> bin2int(reversed(bl))
+        >>> Lcbin.bin2int(reversed(bl))
         8
         >>> ar = np.arange(2**6)
-        >>> test = np.array([bin2int(reversed(bl)) for bl in bc.array])
+        >>> test = np.array([Lcbin.bin2int(reversed(bl)) for bl in bc.array])
         >>> np.array_equal(test, ar)
         True
 
@@ -130,7 +130,7 @@ class Lcbin(pd.DataFrame):
         # >>> bc.dump(): すべての行列をプリント(省略しない)
         # >>> bc.to_csv(): 条件をパースしてファイル名を自動的にアサインしてcsvに保存
         """
-        super().__init__(binary_array(c_num))
+        super().__init__(Lcbin.binary_array(c_num))
         # Required
         self._c_res = c_res
         self._c_num = c_num
@@ -142,7 +142,7 @@ class Lcbin(pd.DataFrame):
 
         # index & columns
         self.index = range(2**c_num)
-        self.columns = c_list(c_initial, c_res, c_num)
+        self.columns = Lcbin.c_list(c_initial, c_res, c_num)
 
         # binary array
         # UserWarning: Pandas doesn't allow columns to be created
@@ -219,6 +219,103 @@ class Lcbin(pd.DataFrame):
         """
         return [i for i, b in enumerate(self.array[ix], start=1) if b]
 
+    @staticmethod
+    def c_list(c_initial, c_res, c_num):
+        """Capacitance list
+        >>> Lcbin.c_list(0, 10, 3)
+        [10, 20, 40]
+        >>> Lcbin.c_list(2,1,4)
+        [3, 4, 6, 10]
+        """
+        return [c_initial + c_res * 2**_c for _c in range(c_num)]
+
+    @staticmethod
+    def int2bin(int_i: int, zero_pad: int) -> str:
+        """
+        >>> Lcbin.int2bin(3, 4)
+        '0011'
+        >>> Lcbin.int2bin(5, 5)
+        '00101'
+        """
+        return '{:0{}b}'.format(int_i, zero_pad)
+
+    @staticmethod
+    def bin2int(bc_array):
+        """テスト用関数(int2bin()の逆関数)
+        >>> Lcbin.bin2int([0, 1, 1])
+        3
+        >>> Lcbin.bin2int([0, 0, 1, 1])
+        3
+        >>> Lcbin.bin2int([1, 1, 1, 1, 1])
+        31
+        """
+        mp_str = map(str, bc_array)
+        joined_str = ','.join(mp_str).replace(',', '')
+        return int(joined_str, 2)  # 2進数の2
+
+    @staticmethod
+    def binary_array(c_num) -> np.ndarray:
+        """Binary Capacitance table
+        インダクタンス容量からコンデンサのバイナリ
+        組み合わせテーブルを作成するpythonスクリプト
+
+        usage:
+            `Lcbin.array(c_res=5, c_num=9, lmh=39, c_initial=120)`
+            コンデンサを9チャンネル用意し、
+            120pFのコンデンサから倍倍に9-1回増えて
+            最も大きい一つのコンデンサ容量が120 + 5*2**8=1400pF
+            接続するインダクタンスが39mHの場合
+            同調周波数が最高72kHz, 最低15kHz
+        args:
+            c_initial: Minimum Capacitance[pf](float)
+            c_res: Resolution of capacitance[pf](float)
+            c_num: Number of capacitance[uF](int)
+            lmh: Indactance[mH](float)
+        return:
+            df: Binary table (pd.DataFrame)
+
+        >>> Lcbin.binary_array(2)
+        array([[0, 0],
+               [1, 0],
+               [0, 1],
+               [1, 1]])
+
+        >>> Lcbin.binary_array(3)
+        array([[0, 0, 0],
+               [1, 0, 0],
+               [0, 1, 0],
+               [1, 1, 0],
+               [0, 0, 1],
+               [1, 0, 1],
+               [0, 1, 1],
+               [1, 1, 1]])
+
+        >>> Lcbin.binary_array(6)[0]
+        array([0, 0, 0, 0, 0, 0])
+
+        >>> Lcbin.binary_array(6)[-1]
+        array([1, 1, 1, 1, 1, 1])
+
+        >>> n = 10
+        >>> Lcbin.binary_array(n).shape == (2**n, n)
+        True
+        """
+
+        # ':0{}b'.format(_i, c_num) <- c_numの数だけ0-paddingし、_iを二進数に変換する
+        b_list = np.array(
+            [reversed(Lcbin.int2bin(_i, c_num)) for _i in range(2**c_num)])
+        # b_list like...
+        # array(['000000000000', '100000000000', '010000000000', ...,
+        # '101111111111', '011111111111', '111111111111'], dtype='<U12')
+
+        b_array = np.array([list(b) for b in b_list]).astype(int)
+        # [1:] は0のみの行排除のため
+        # b_array like...
+        # [[0,0,1,...],
+        # [1,0,1,...],
+        # [1,1,1,...]]
+        return b_array
+
 
 def dump(self):
     """print all rows & columns""" ""
@@ -230,101 +327,6 @@ setattr(pd.DataFrame, 'dump', dump)
 # === わざわざsetattrしている理由 ===
 # sort_values()メソッド使った後にもdumpしたいので、
 # Lcbinだけでなく、pandas.DataFrameにメソッドを割り当てたい
-
-
-def c_list(c_initial, c_res, c_num):
-    """Capacitance list
-    >>> c_list(0, 10, 3)
-    [10, 20, 40]
-    >>> c_list(2,1,4)
-    [3, 4, 6, 10]
-    """
-    return [c_initial + c_res * 2**_c for _c in range(c_num)]
-
-
-def int2bin(int_i: int, zero_pad: int) -> str:
-    """
-    >>> int2bin(3, 4)
-    '0011'
-    >>> int2bin(5, 5)
-    '00101'
-    """
-    return '{:0{}b}'.format(int_i, zero_pad)
-
-
-def bin2int(bc_array):
-    """テスト用関数(int2bin()の逆関数)
-    >>> bin2int([0, 1, 1])
-    3
-    >>> bin2int([0, 0, 1, 1])
-    3
-    >>> bin2int([1, 1, 1, 1, 1])
-    31
-    """
-    mp_str = map(str, bc_array)
-    joined_str = ','.join(mp_str).replace(',', '')
-    return int(joined_str, 2)  # 2進数の2
-
-
-def binary_array(c_num) -> np.ndarray:
-    """Binary Capacitance table
-    インダクタンス容量からコンデンサのバイナリ
-    組み合わせテーブルを作成するpythonスクリプト
-
-    usage:
-        `Lcbin.array(c_res=5, c_num=9, lmh=39, c_initial=120)`
-        コンデンサを9チャンネル用意し、
-        120pFのコンデンサから倍倍に9-1回増えて
-        最も大きい一つのコンデンサ容量が120 + 5*2**8=1400pF
-        接続するインダクタンスが39mHの場合
-        同調周波数が最高72kHz, 最低15kHz
-    args:
-        c_initial: Minimum Capacitance[pf](float)
-        c_res: Resolution of capacitance[pf](float)
-        c_num: Number of capacitance[uF](int)
-        lmh: Indactance[mH](float)
-    return:
-        df: Binary table (pd.DataFrame)
-
-    >>> binary_array(2)
-    array([[0, 0],
-           [1, 0],
-           [0, 1],
-           [1, 1]])
-
-    >>> binary_array(3)
-    array([[0, 0, 0],
-           [1, 0, 0],
-           [0, 1, 0],
-           [1, 1, 0],
-           [0, 0, 1],
-           [1, 0, 1],
-           [0, 1, 1],
-           [1, 1, 1]])
-
-    >>> binary_array(6)[0]
-    array([0, 0, 0, 0, 0, 0])
-
-    >>> binary_array(6)[-1]
-    array([1, 1, 1, 1, 1, 1])
-
-    >>> n = 10
-    >>> binary_array(n).shape == (2**n, n)
-    True
-    """
-    # ':0{}b'.format(_i, c_num) <- c_numの数だけ0-paddingし、_iを二進数に変換する
-    b_list = np.array([reversed(int2bin(_i, c_num)) for _i in range(2**c_num)])
-    # b_list like...
-    # array(['000000000000', '100000000000', '010000000000', ...,
-    # '101111111111', '011111111111', '111111111111'], dtype='<U12')
-
-    b_array = np.array([list(b) for b in b_list]).astype(int)
-    # [1:] は0のみの行排除のため
-    # b_array like...
-    # [[0,0,1,...],
-    # [1,0,1,...],
-    # [1,1,1,...]]
-    return b_array
 
 
 def main(argv):
