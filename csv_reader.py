@@ -6,58 +6,54 @@
     スペクトラムアナライザ:N9010A
 """
 
+from pathlib import Path
 import pandas as pd
-import os
 
 
-def reader_N5071(*filelist):
+def read_network_analyzer(*files):
     """ネットワークアナライザN5071からデータインポート
     USAGE:
-        reader_N5071(test1.csv, test2.csv, test3.csv)
-        return 3 columns pandas DataFrame
+        read_network_analyzer(test1.CSV, test2.CSV, test3.CSV)
+            or
+        import glob
+        testdata = glob.iglob('*.CSV')
+        read_network_analyzer(*testdata)
+            then
+        return pandas DataFrame
     """
-    skiprows = 3
-    tempdata = pd.read_csv(filelist[0],
-                           skiprows=skiprows,
-                           engine='python',
-                           names=['Frequency', 'temp'],
-                           usecols=[0, 1],
-                           index_col=0)
-    df = pd.DataFrame(tempdata)
-    for file in filelist:
-        dff = pd.read_csv(file,
-                          skiprows=skiprows - 1,
-                          engine='python',
-                          usecols=[0, 1],
-                          index_col=0)
-        basename = os.path.splitext(os.path.basename(file))[0]
-        df[basename] = dff
-    del df['temp']
-    return df
+    skiprows = 2
+    return pd.DataFrame({
+        Path(i).stem: pd.read_table(i,
+                                    sep=',',
+                                    skiprows=skiprows,
+                                    engine='python',
+                                    index_col=0,
+                                    usecols=[0, 1]).squeeze()
+        for i in files
+    })
 
 
-def reader_N9010A(*filelist):
-    """スペクトラムアナライザN9010Aからデータインポート
+def read_spectrum_analyzer(*files):
+    """ネットワークアナライザN9010Aからデータインポート
     USAGE:
-        reader_N9010A(test1.csv, test2.csv, test3.csv)
-        return 3 columns pandas DataFrame
-
-    ! 1列目しか抜き出せない...
+        read_spectrum_analyzer(test1.CSV, test2.CSV, test3.CSV)
+            or
+        import glob
+        testdata = glob.iglob('*.CSV')
+        read_spectrum_analyzer(*testdata)
+            then
+        return pandas DataFrame
     """
-    skiprows = 44
-    # 1ファイルだけ読み込んでindex設定用に使う
-    tempfile = filelist[0]
-    tempdata = pd.read_csv(tempfile,
-                           skiprows=skiprows,
-                           engine='python',
-                           names=['temp'])
-    df = pd.DataFrame(tempdata)
-    for file in filelist:
-        dff = pd.read_csv(file, skiprows=skiprows - 1, engine='python')
-        basename = os.path.splitext(os.path.basename(file))[0]
-        df[basename] = dff
-    del df['temp']
-    return df
+    skiprows = 43
+    return pd.DataFrame({
+        Path(i).stem: pd.read_table(i,
+                                    sep=',',
+                                    skiprows=skiprows,
+                                    engine='python',
+                                    index_col=0,
+                                    usecols=[0, 1]).squeeze()
+        for i in files
+    })
 
 
 def nearest_x(df, value):
@@ -73,3 +69,10 @@ def nearest_x(df, value):
 #     __init__(file, machine)
 #         if not machine
 #         machine=self.machine
+
+# class Reader:
+#     machines = {'N5071': 2, 'N9010A': 43}
+#     def __init__(self):
+#
+#
+#     def read_spectrum_analyzer(skiprows=Reader.machines['N5071'], *data):

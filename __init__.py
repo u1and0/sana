@@ -110,8 +110,8 @@ Binary Capacitance table
     引数directoryを指定することで所定のディレクトリに保存する。
 """
 
-from .csv_reader import reader_N5071
-from .csv_reader import reader_N9010A
+from .csv_reader import read_network_analyzer
+from .csv_reader import read_spectrum_analyzer
 from .describe_SN import describe_SN
 from .sana import Syncf
 from .sana import nearest_x

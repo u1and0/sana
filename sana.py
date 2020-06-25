@@ -3,7 +3,7 @@
 import sys
 import pandas as pd
 import numpy as np
-from .csv_reader import reader_N5071
+from .csv_reader import read_network_analyzer
 
 
 def nearest_x(series, value):
@@ -37,7 +37,6 @@ class Syncf:
         Q: Q値 (f0 / BW)
         a: 1Hzあたりの減衰[dB]
     """
-
     def __init__(self, data, f1=None, f2=None):
         self.data = data
 

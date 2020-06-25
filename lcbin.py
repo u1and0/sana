@@ -155,12 +155,8 @@ class Lcbin(pd.DataFrame):
         if c_ser != 0:  # Evade 0 div warning
             self.CpF = 1 / ((1 / self.CpF) + (1 / c_ser))
 
-        def resonance_freq(l, c):
-            """同調周波数を返すクロージャ"""
-            return 1 / (2 * np.pi * np.sqrt(l * c))
-
-        self['fkHz'] = resonance_freq(self._lmh * 1e-3,
-                                      self.CpF * 1e-12) / 1000
+        self['fkHz'] = Lcbin.resonance_freq(self._lmh * 1e-3,
+                                            self.CpF * 1e-12) / 1000
 
     def to_csv(self, directory=os.getcwd(), sort: str = None, *args, **kwargs):
         """save to csv.
@@ -315,6 +311,11 @@ class Lcbin(pd.DataFrame):
         # [1,0,1,...],
         # [1,1,1,...]]
         return b_array
+
+    @staticmethod
+    def resonance_freq(l, c):
+        """同調周波数を返す関数"""
+        return 1 / (2 * np.pi * np.sqrt(l * c))
 
 
 def dump(self):
